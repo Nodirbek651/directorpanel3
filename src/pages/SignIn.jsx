@@ -31,7 +31,8 @@ const SignIn = () => {
     const foundUser = users.find(user =>
       user.username === username &&
       user.password === password &&
-      user.role === "DIRECTOR"
+      user.role === "BIGADMIN
+      "
     );
 
     if (foundUser) {

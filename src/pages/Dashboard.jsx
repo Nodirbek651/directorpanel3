@@ -12,24 +12,23 @@ const StatRow = memo(({ day, count, total, fee, totalWithFee }) => (
   </tr>
 ));
 
-const months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const WeeklyMonthlyStats = () => {
+  const currentMonthIndex = new Date().getMonth();
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex);
   const [orders, setOrders] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [isMobile, setIsMobile] = useState(false);
-  const ordersRef = useRef([]);
   const [loading, setLoading] = useState(true);
+  const ordersRef = useRef([]);
+
+  const year = new Date().getFullYear();
 
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 600);
-    };
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 600000); // 10 min
+    return () => clearInterval(interval);
   }, []);
 
   const fetchOrders = async () => {
@@ -47,73 +46,82 @@ const WeeklyMonthlyStats = () => {
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 600000);
-    return () => clearInterval(interval);
-  }, []);
+  const monthStats = useMemo(() => {
+    const statsByMonth = {};
+    for (let m = 0; m < 12; m++) {
+      const daysCount = getDaysInMonth(year, m);
+      const stats = {};
+      for (let d = 1; d <= daysCount; d++) {
+        stats[d] = { count: 0, total: 0, fee: 0, totalWithFee: 0 };
+      }
 
-  const year = new Date().getFullYear();
-  const daysCount = getDaysInMonth(year, selectedMonth);
+      orders.forEach(order => {
+        const date = new Date(order.createdAt);
+        if (date.getMonth() === m && date.getFullYear() === year) {
+          const day = date.getDate();
+          const base = order.totalPrice;
+          const serviceFee = base * 0.04;
+          stats[day].count++;
+          stats[day].total += base;
+          stats[day].fee += serviceFee;
+          stats[day].totalWithFee += base + serviceFee;
+        }
+      });
 
-  const stats = useMemo(() => {
-    const statsObj = {};
-    for (let d = 1; d <= daysCount; d++) {
-      statsObj[d] = { count: 0, total: 0, fee: 0, totalWithFee: 0 };
+      const totalCount = Object.values(stats).reduce((a, v) => a + v.count, 0);
+      statsByMonth[m] = { stats, totalCount };
     }
 
-    orders.forEach(order => {
-      const date = new Date(order.createdAt);
-      if (date.getMonth() === selectedMonth && date.getFullYear() === year) {
-        const day = date.getDate();
-        const base = order.totalPrice;
-        const serviceFee = base * 0.04;
-        statsObj[day].count++;
-        statsObj[day].total += base;
-        statsObj[day].fee += serviceFee;
-        statsObj[day].totalWithFee += base + serviceFee;
-      }
-    });
+    return statsByMonth;
+  }, [orders, year]);
 
-    return statsObj;
-  }, [orders, selectedMonth, year, daysCount]);
+  const currentStats = monthStats[selectedMonth]?.stats || {};
+  const daysCount = Object.keys(currentStats).length;
 
-  const totalCount   = useMemo(() => Object.values(stats).reduce((a, v) => a + v.count, 0), [stats]);
-  const grandTotal   = useMemo(() => Object.values(stats).reduce((a, v) => a + v.total, 0), [stats]);
-  const grandFee     = useMemo(() => Object.values(stats).reduce((a, v) => a + v.fee, 0), [stats]);
-  const grandWithFee = useMemo(() => Object.values(stats).reduce((a, v) => a + v.totalWithFee, 0), [stats]);
+  const availableMonths = useMemo(() => {
+    const filtered = Object.entries(monthStats)
+      .filter(([_, data]) => data.totalCount > 0)
+      .map(([index]) => Number(index));
+
+    if (!filtered.includes(selectedMonth)) {
+      filtered.push(selectedMonth);
+    }
+
+    return filtered.sort((a, b) => a - b);
+  }, [monthStats, selectedMonth]);
+
+  const totalCount = useMemo(() => {
+    return Object.values(currentStats).reduce((a, v) => a + v.count, 0);
+  }, [currentStats]);
+
+  const grandTotal = useMemo(() => {
+    return Object.values(currentStats).reduce((a, v) => a + v.total, 0);
+  }, [currentStats]);
+
+  const grandFee = useMemo(() => {
+    return Object.values(currentStats).reduce((a, v) => a + v.fee, 0);
+  }, [currentStats]);
+
+  const grandWithFee = useMemo(() => {
+    return Object.values(currentStats).reduce((a, v) => a + v.totalWithFee, 0);
+  }, [currentStats]);
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>{months[selectedMonth]} oyi buyurtmalar statistikasi</h2>
+      <h2 style={styles.heading}>{months[selectedMonth]} oyi statistikasi</h2>
 
-      <div style={{
-        display: 'flex',
-        gap: 8,
-        marginBottom: 20,
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start'
-      }}>
-        {months.map((m, i) => (
-          <button
-            key={m}
-            onClick={() => setSelectedMonth(i)}
-            style={{
-              padding: '8px 14px',
-              border: i === selectedMonth ? '1px solid #28a745' : '1px solid #ccc',
-              backgroundColor: i === selectedMonth ? '#28a745' : '#fff',
-              color: i === selectedMonth ? '#fff' : '#000',
-              cursor: 'pointer',
-              borderRadius: 5,
-              fontSize: 14,
-              minWidth: isMobile ? '23%' : 'auto',
-              flex: isMobile ? '1 0 23%' : '0 0 auto',
-              textAlign: 'center'
-            }}
-          >
-            {m}
-          </button>
-        ))}
+      <div style={styles.selectContainer}>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          style={styles.select}
+        >
+          {availableMonths.map((index) => (
+            <option key={index} value={index}>
+              {months[index]}
+            </option>
+          ))}
+        </select>
       </div>
 
       {loading ? (
@@ -133,19 +141,19 @@ const WeeklyMonthlyStats = () => {
             <tbody>
               {[...Array(daysCount)].map((_, idx) => {
                 const day = idx + 1;
-                const { count, total, fee, totalWithFee } = stats[day];
+                const { count, total, fee, totalWithFee } = currentStats[day] || {};
                 return (
                   <StatRow
                     key={day}
                     day={day}
-                    count={count}
-                    total={total}
-                    fee={fee}
-                    totalWithFee={totalWithFee}
+                    count={count || 0}
+                    total={total || 0}
+                    fee={fee || 0}
+                    totalWithFee={totalWithFee || 0}
                   />
                 );
               })}
-              <tr style={{ fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+              <tr style={{ fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
                 <td style={styles.td}>Jami</td>
                 <td style={styles.td}>{totalCount}</td>
                 <td style={styles.td}>{grandTotal.toLocaleString()}</td>
@@ -161,12 +169,51 @@ const WeeklyMonthlyStats = () => {
 };
 
 const styles = {
-  container:        { padding: 16, fontFamily: 'Arial, sans-serif' },
-  heading:          { fontSize: 24, marginBottom: 16, color: '#222' },
-  tableWrapper:     { overflowX: 'auto', backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 0 10px rgba(0,0,0,0.1)' },
-  table:            { width: '100%', borderCollapse: 'collapse', minWidth: 600 },
-  th:               { backgroundColor: '#f4f4f4', padding: 12, textAlign: 'left', fontWeight: 'bold', borderBottom: '1px solid #ddd' },
-  td:               { padding: 12, borderBottom: '1px solid #eee', wordBreak: 'break-word' }
+  container: {
+    padding: 20,
+    fontFamily: 'Arial, sans-serif',
+    maxWidth: 1000,
+    margin: 'auto'
+  },
+  heading: {
+    fontSize: 24,
+    marginBottom: 16,
+    color: 'black'
+  },
+  selectContainer: {
+    marginBottom: 20,
+    textAlign: 'left'
+  },
+  select: {
+    padding: 10,
+    fontSize: 16,
+    borderRadius: 6,
+    border: '1px solid #ccc',
+    width: '100%',
+    maxWidth: 250
+  },
+  tableWrapper: {
+    overflowX: 'auto',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse'
+  },
+  th: {
+    backgroundColor: '#f4f4f4',
+    padding: 12,
+    textAlign: 'left',
+    fontWeight: 'bold',
+    borderBottom: '1px solid #ddd'
+  },
+  td: {
+    padding: 12,
+    borderBottom: '1px solid #eee',
+    wordBreak: 'break-word'
+  }
 };
 
 export default WeeklyMonthlyStats;

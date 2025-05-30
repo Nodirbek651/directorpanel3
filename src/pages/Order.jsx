@@ -129,7 +129,7 @@ const Orders = () => {
             {filteredOrders.map((order, index) => (
               <tr key={order._id || index}>
                 <td style={styles.td}>{index + 1}</td>
-                <td style={styles.td}>{order.tableNumber || 'Nomaʼlum'}</td>
+                <td style={styles.td}>{order.tableId || 'Nomaʼlum'}</td>
                 <td style={styles.td}>
                   {order.orderItems?.map(item => `${item.product.name} (${item.count})`).join(', ')}
                 </td>

@@ -31,8 +31,7 @@ const SignIn = () => {
     const foundUser = users.find(user =>
       user.username === username &&
       user.password === password &&
-      user.role === "BIGADMIN
-      "
+      user.role === "BIGADMIN"
     );
 
     if (foundUser) {
@@ -197,7 +196,7 @@ const SignIn = () => {
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowPassword(!showPassword); }}
               title={showPassword ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}
             >
-              {showPassword ? '🙈' : '👁️'}
+              {showPassword ? 'berkitish' : "ko'rsatish"}
             </span>
           </div>
           <button type="submit">Kirish</button>

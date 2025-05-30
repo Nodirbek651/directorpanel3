@@ -4,11 +4,8 @@ import { useNavigate } from 'react-router-dom';
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-    navigate('/logout');
+  const goToLogoutPage = () => {
+    navigate('/logout'); // Endi faqat logout sahifasiga yo‘naltiradi
   };
 
   return (
@@ -20,7 +17,7 @@ const Navbar = ({ toggleSidebar }) => {
       </div>
 
       <div style={styles.rightSection}>
-        <button style={styles.button} onClick={logout}>
+        <button style={styles.button} onClick={goToLogoutPage}>
           Chiqish
         </button>
       </div>

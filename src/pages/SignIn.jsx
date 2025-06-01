@@ -13,7 +13,7 @@ const SignIn = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://109.172.37.41:4000/user");
+        const response = await axios.get("https://suddocs.uz/user");
         console.log("Fetched users:", response.data);
         setUsers(response.data);
       } catch (err) {

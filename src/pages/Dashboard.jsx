@@ -21,13 +21,14 @@ const WeeklyMonthlyStats = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const ordersRef = useRef([]);
 
   const year = new Date().getFullYear();
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 600000); // 10 min
+    const interval = setInterval(fetchOrders, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,6 +40,7 @@ const WeeklyMonthlyStats = () => {
         ordersRef.current = data;
         setOrders(data);
       }
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Xatolik:', error);
     } finally {
@@ -124,6 +126,12 @@ const WeeklyMonthlyStats = () => {
         </select>
       </div>
 
+      {lastUpdated && (
+        <div style={styles.updated}>
+          So‘nggi yangilanish: {lastUpdated.toLocaleTimeString()}
+        </div>
+      )}
+
       {loading ? (
         <div>Yuklanmoqda...</div>
       ) : (
@@ -131,11 +139,11 @@ const WeeklyMonthlyStats = () => {
           <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.th}>Kun</th>
+                <th style={{ ...styles.th, ...styles.thFirst }}>Kun</th>
                 <th style={styles.th}>Buyurtmalar soni</th>
                 <th style={styles.th}>Asl summa</th>
                 <th style={styles.th}>Xizmat haqi (4%)</th>
-                <th style={styles.th}>Jami summa</th>
+                <th style={{ ...styles.th, ...styles.thLast }}>Jami summa</th>
               </tr>
             </thead>
             <tbody>
@@ -173,16 +181,17 @@ const styles = {
     padding: 20,
     fontFamily: 'Arial, sans-serif',
     maxWidth: 1000,
-    margin: 'auto'
+    margin: 'auto',
   },
   heading: {
     fontSize: 24,
     marginBottom: 16,
-    color: 'black'
+    color: 'black',
+    textAlign: 'center',
   },
   selectContainer: {
-    marginBottom: 20,
-    textAlign: 'left'
+    marginBottom: 10,
+    textAlign: 'left',
   },
   select: {
     padding: 10,
@@ -190,30 +199,48 @@ const styles = {
     borderRadius: 6,
     border: '1px solid #ccc',
     width: '100%',
-    maxWidth: 250
+    maxWidth: 250,
+  },
+  updated: {
+    fontSize: 14,
+    color: '#777',
+    marginBottom: 10,
+    textAlign: 'right',
   },
   tableWrapper: {
     overflowX: 'auto',
     backgroundColor: '#fff',
     borderRadius: 8,
-    boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+    boxShadow: '0 0 10px rgba(0,0,0,0.1)',
   },
   table: {
     width: '100%',
-    borderCollapse: 'collapse'
+    borderCollapse: 'collapse',
+    minWidth: 600,
   },
   th: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: '#0057b7',
+    color: 'white',
     padding: 12,
-    textAlign: 'left',
+    textAlign: 'center',
     fontWeight: 'bold',
-    borderBottom: '1px solid #ddd'
+    borderBottom: '2px solid #003f8a',
+    userSelect: 'none',
+  },
+  thFirst: {
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  thLast: {
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
   },
   td: {
     padding: 12,
     borderBottom: '1px solid #eee',
-    wordBreak: 'break-word'
-  }
+    textAlign: 'center',
+    wordBreak: 'break-word',
+  },
 };
 
 export default WeeklyMonthlyStats;

@@ -10,6 +10,8 @@ const translateRole = (role) => {
       return 'Povar';
     case 'CUSTOMER':
       return 'Admin';
+    case 'BIGADMIN':
+      return 'Direktor';
     default:
       return role || 'Nomaʼlum';
   }

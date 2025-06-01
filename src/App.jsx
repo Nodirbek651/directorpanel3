@@ -7,7 +7,7 @@ import Finance from './pages/Finance';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import Logout from './pages/Logout';
-import SignIn from './pages/SignIn';
+import SignIn from './pages/SignIN';
 
 import { Link } from 'react-router-dom';
 

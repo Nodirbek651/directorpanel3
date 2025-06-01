@@ -24,10 +24,9 @@ const Orders = () => {
     fetchOrders();
     const interval = setInterval(() => {
       fetchOrders();
-    }, 50000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
-
 
   const handleToggle = (value) => {
     setShowHistory(value);
@@ -187,11 +186,13 @@ const styles = {
     minWidth: '600px',
   },
   th: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: '#0057b7',    // ko‘k fon
+    color: '#fff',                 // oq matn
     padding: '12px',
-    textAlign: 'left',
+    textAlign: 'center',           // markazga tekislandi
     fontWeight: 'bold',
-    borderBottom: '1px solid #ddd',
+    borderBottom: '1px solid #003f8a', // ozgina ko‘k rangli chiziq
+    userSelect: 'none',
   },
   td: {
     padding: '12px',

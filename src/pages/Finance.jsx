@@ -13,10 +13,15 @@ const initialFinancialData = {
   totalExpense: 0,
 };
 
+const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+
 const Finance = () => {
+  const [allOrders, setAllOrders] = useState([]);
   const [data, setData] = useState(initialFinancialData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [availableMonths, setAvailableMonths] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,55 +29,24 @@ const Finance = () => {
       setError(null);
       try {
         const ordersRes = await axios.get('https://suddocs.uz/order');
-        const expensesRes = await axios.get('https://suddocs.uz/order');
 
         const orders = ordersRes.data;
-        const expenses = expensesRes.data;
 
-       
-        const revenue = orders.reduce((sum, order) => sum + order.totalPrice , 0);
-
-        const expenseCategories = {
-          productCost: 0,
-          laborCost: 0,
-          utilityCost: 0,
-          otherCost: 0,
-        };
-
-        expenses.forEach(({ category, amount }) => {
-          switch (category) {
-            case 'Mahsulot':
-              expenseCategories.productCost += amount;
-              break;
-            case 'Xodim':
-              expenseCategories.laborCost += amount;
-              break;
-            case 'Kommunal':
-              expenseCategories.utilityCost += amount;
-              break;
-            case 'Boshqa':
-              expenseCategories.otherCost += amount;
-              break;
-            default:
-              break;
-          }
+        // Oyga qarab guruhlab olish
+        const monthGroups = {};
+        orders.forEach(order => {
+          const month = new Date(order.createdAt).getMonth(); // 0-based: 0=Jan
+          if (!monthGroups[month]) monthGroups[month] = [];
+          monthGroups[month].push(order);
         });
 
+        const monthsWithOrders = Object.keys(monthGroups).map(m => parseInt(m));
+        setAvailableMonths(monthsWithOrders);
+        setAllOrders(orders);
 
-        const totalExpense =
-          expenseCategories.productCost +
-          expenseCategories.laborCost +
-          expenseCategories.utilityCost +
-          expenseCategories.otherCost;
-
-        const profit = revenue - totalExpense;
-
-        setData({
-          revenue,
-          expenses: expenseCategories,
-          profit,
-          totalExpense,
-        });
+        if (monthsWithOrders.length > 0) {
+          setSelectedMonth(monthsWithOrders[0]); // Default birinchi mavjud oyning zakazlari
+        }
       } catch (err) {
         setError('Maʼlumotlarni olishda xatolik yuz berdi.');
         console.error(err);
@@ -84,12 +58,88 @@ const Finance = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedMonth === null) return;
+
+    // Faqat tanlangan oydagi zakazlarni olish
+    const monthlyOrders = allOrders.filter(order => {
+      const orderMonth = new Date(order.createdAt).getMonth();
+      return orderMonth === selectedMonth;
+    });
+
+    const revenue = monthlyOrders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    // Ixtiyoriy: xarajatlar API bo‘lsa shu yerda qo‘shing
+    const expenses = [
+      { category: 'Mahsulot', amount: 500000 },
+      { category: 'Xodim', amount: 700000 },
+      { category: 'Kommunal', amount: 200000 },
+      { category: 'Boshqa', amount: 100000 },
+    ];
+
+    const expenseCategories = {
+      productCost: 0,
+      laborCost: 0,
+      utilityCost: 0,
+      otherCost: 0,
+    };
+
+    expenses.forEach(({ category, amount }) => {
+      switch (category) {
+        case 'Mahsulot':
+          expenseCategories.productCost += amount;
+          break;
+        case 'Xodim':
+          expenseCategories.laborCost += amount;
+          break;
+        case 'Kommunal':
+          expenseCategories.utilityCost += amount;
+          break;
+        case 'Boshqa':
+          expenseCategories.otherCost += amount;
+          break;
+        default:
+          break;
+      }
+    });
+
+    const totalExpense =
+      expenseCategories.productCost +
+      expenseCategories.laborCost +
+      expenseCategories.utilityCost +
+      expenseCategories.otherCost;
+
+    const profit = revenue - totalExpense;
+
+    setData({
+      revenue,
+      expenses: expenseCategories,
+      profit,
+      totalExpense,
+    });
+  }, [selectedMonth, allOrders]);
+
   if (loading) return <div style={{ padding: 20 }}>Yuklanmoqda...</div>;
   if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
 
   return (
     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
       <h2>Moliyaviy Hisobotlar</h2>
+
+      <div style={{ marginBottom: 20 }}>
+        <label>Oy tanlang: </label>
+        <select
+          value={selectedMonth ?? ''}
+          onChange={e => setSelectedMonth(parseInt(e.target.value))}
+          style={{ padding: '5px', marginLeft: '10px' }}
+        >
+          {availableMonths.map(month => (
+            <option key={month} value={month}>
+              {monthNames[month]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={cardStyle}>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Lavozimlarni tarjima qilish
 const translateRole = (role) => {
   switch (role) {
     case 'CASHIER':
@@ -13,7 +12,7 @@ const translateRole = (role) => {
     case 'BIGADMIN':
       return 'Direktor';
     default:
-      return role || 'Nomaʼlum';
+      return 'Nomaʼlum';
   }
 };
 
@@ -35,41 +34,131 @@ const Employees = () => {
       });
   }, []);
 
-  if (loading) return <p style={{ padding: '20px' }}>⏳ Yuklanmoqda...</p>;
-  if (error) return <p style={{ padding: '20px', color: 'red' }}>{error}</p>;
+  if (loading) return (
+    <p style={{
+      padding: 30,
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#555',
+      fontFamily: "'Poppins', sans-serif",
+    }}>⏳ Yuklanmoqda...</p>
+  );
+
+  if (error) return (
+    <p style={{
+      padding: 30,
+      textAlign: 'center',
+      fontSize: 18,
+      color: 'red',
+      fontFamily: "'Poppins', sans-serif",
+    }}>{error}</p>
+  );
 
   return (
-    <div style={{ padding: '30px', fontFamily: 'sans-serif' }}>
-      <h2 style={{ marginBottom: '20px' }}>📋 Xodimlar Ro'yxati</h2>
+    <div style={{
+      padding: 30,
+      fontFamily: "'Poppins', sans-serif",
+      maxWidth: 900,
+      margin: '0 auto',
+      backgroundColor: '#f9fbfd',
+      borderRadius: 20,
+      boxShadow: '0 15px 30px rgba(0,0,0,0.1)'
+    }}>
+      <h2 style={{
+        marginBottom: 25,
+        color: '#1e3c72',
+        fontWeight: 700,
+        fontSize: 28,
+        textAlign: 'center',
+        textShadow: '0 2px 5px rgba(30, 60, 114, 0.3)'
+      }}>
+        📋 Xodimlar Ro'yxati
+      </h2>
 
       <div style={{
         overflowX: 'auto',
-        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-        borderRadius: '10px',
-        backgroundColor: '#fff'
+        boxShadow: '0 8px 20px rgba(30, 60, 114, 0.15)',
+        borderRadius: 16,
+        backgroundColor: '#fff',
       }}>
         <table style={{
-          minWidth: '500px',
           width: '100%',
-          borderCollapse: 'collapse',
-          borderRadius: '10px',
-          overflow: 'hidden'
+          borderCollapse: 'separate',
+          borderSpacing: 0,
+          minWidth: 600,
         }}>
-          <thead style={{ backgroundColor: '#f5f5f5' }}>
-            <tr>
-              <th style={thStyle}>ID</th>
-              <th style={thStyle}>Ism</th>
-              <th style={thStyle}>Lavozimi</th>
-              <th style={thStyle}>Telefon raqami</th>
+          <thead>
+            <tr style={{
+              backgroundColor: '#1e3c72',
+              color: '#fff',
+              fontWeight: 600,
+              userSelect: 'none',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+            }}>
+              <th style={{
+                padding: '16px 24px',
+                borderBottom: '3px solid #144270',
+                borderTopLeftRadius: 16,
+                textAlign: 'left',
+              }}>ID</th>
+              <th style={{
+                padding: '16px 24px',
+                borderBottom: '3px solid #144270',
+                textAlign: 'left',
+              }}>Ism</th>
+              <th style={{
+                padding: '16px 24px',
+                borderBottom: '3px solid #144270',
+                textAlign: 'left',
+              }}>Lavozimi</th>
+              <th style={{
+                padding: '16px 24px',
+                borderBottom: '3px solid #144270',
+                borderTopRightRadius: 16,
+                textAlign: 'left',
+              }}>Telefon raqami</th>
             </tr>
           </thead>
           <tbody>
             {employees.map((employee, index) => (
-              <tr key={employee.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={tdStyle}>{index + 1}</td>
-                <td style={tdStyle}>{employee.name}</td>
-                <td style={tdStyle}>{translateRole(employee.role)}</td>
-                <td style={tdStyle}>{employee.phone || '—'}</td>
+              <tr
+                key={employee.id}
+                style={{
+                  borderBottom: '1px solid #eee',
+                  transition: 'background-color 0.3s ease',
+                  cursor: 'default',
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#eaf3ff'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <td style={{
+                  padding: '14px 24px',
+                  color: '#333',
+                  fontSize: 16,
+                  fontWeight: '600',
+                  minWidth: 30,
+                }}>{index + 1}</td>
+                <td style={{
+                  padding: '14px 24px',
+                  color: '#222',
+                  fontSize: 16,
+                  fontWeight: '500',
+                  whiteSpace: 'nowrap',
+                }}>{employee.name}</td>
+                <td style={{
+                  padding: '14px 24px',
+                  color: '#555',
+                  fontSize: 15,
+                  fontWeight: '500',
+                }}>{translateRole(employee.role)}</td>
+                <td style={{
+                  padding: '14px 24px',
+                  color: '#666',
+                  fontSize: 15,
+                  fontWeight: '400',
+                  whiteSpace: 'nowrap',
+                }}>{employee.phone || '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -77,21 +166,6 @@ const Employees = () => {
       </div>
     </div>
   );
-};
-
-// Style'lar
-const thStyle = {
-  padding: '12px',
-  borderBottom: '2px solid #ddd',
-  textAlign: 'left',
-  fontWeight: 'bold',
-  color: '#333'
-};
-
-const tdStyle = {
-  padding: '12px',
-  textAlign: 'left',
-  color: '#444'
 };
 
 export default Employees;

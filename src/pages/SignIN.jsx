@@ -8,11 +8,6 @@ const SignIN = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(false);
-
-
-
-
-  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,7 +27,6 @@ const SignIN = () => {
 
   const handleSignIn = (e) => {
     e.preventDefault();
-
     const foundUser = users.find(user =>
       user.username === username &&
       user.password === password &&
@@ -55,114 +49,124 @@ const SignIN = () => {
         * {
           box-sizing: border-box;
         }
+
         body, #root {
-          margin: 0; padding: 0; height: 100vh; width: 100vw;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          width: 100vw;
+          background: linear-gradient(135deg, #1c1c3c, #3a3a85);
           display: flex;
           justify-content: center;
           align-items: center;
+          font-family: 'Poppins', sans-serif;
         }
+
         .login-container {
-          background: #1f1f38;
-          padding: 40px 30px;
-          border-radius: 12px;
-          width: 320px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-          color: #f0f0f5;
+          background: #ffffff0d;
+          padding: 40px;
+          border-radius: 16px;
+          backdrop-filter: blur(14px);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+          width: 100%;
+          max-width: 400px;
           text-align: center;
+          color: #f0f0f0;
           transition: transform 0.3s ease;
         }
+
         .login-container:hover {
-          transform: scale(1.03);
-          box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+          transform: translateY(-5px);
         }
+
         .login-title {
-          margin-bottom: 25px;
           font-size: 28px;
           font-weight: 700;
-          letter-spacing: 1.2px;
+          margin-bottom: 30px;
+          color: #ffffff;
         }
+
         form {
           display: flex;
           flex-direction: column;
           gap: 20px;
         }
+
         input[type="text"],
         input[type="password"] {
-          width: 100%;
-          max-width: 100%;
           padding: 14px 18px;
-          border-radius: 8px;
+          border-radius: 10px;
           border: none;
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
           font-size: 16px;
           outline: none;
-          background-color: #333353;
-          color: #eaeaff;
-          transition: background-color 0.2s ease;
-          box-shadow: inset 0 0 5px #5c5c90;
-          box-sizing: border-box;
+          transition: all 0.3s ease;
         }
+
         input[type="text"]:focus,
         input[type="password"]:focus {
-          background-color: #49497a;
-          box-shadow: 0 0 8px #8674ff;
+          background: rgba(255, 255, 255, 0.2);
+          box-shadow: 0 0 8px #8a76ff;
         }
+
         .password-wrapper {
           position: relative;
-          width: 100%;
-          max-width: 100%;
         }
+
         .toggle-password {
           position: absolute;
-          right: 15px;
           top: 50%;
+          right: 15px;
           transform: translateY(-50%);
+          color: #bbb;
           cursor: pointer;
-          font-size: 18px;
           user-select: none;
-          color: #a9a9ff;
-          transition: color 0.3s ease;
+          font-size: 14px;
         }
+
         .toggle-password:hover {
           color: #fff;
         }
+
         button {
           padding: 14px;
+          border-radius: 10px;
           border: none;
-          border-radius: 8px;
-          background: #7b68ee;
+          background: #6c63ff;
           color: white;
-          font-size: 18px;
           font-weight: 600;
+          font-size: 16px;
           cursor: pointer;
-          transition: background 0.3s ease;
-          box-shadow: 0 5px 15px rgba(123, 104, 238, 0.5);
+          box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
+          transition: all 0.3s ease;
         }
+
         button:hover {
-          background: #9a86ff;
-          box-shadow: 0 8px 25px rgba(154, 134, 255, 0.7);
+          background: #867aff;
+          box-shadow: 0 8px 25px rgba(134, 122, 255, 0.6);
         }
+
         .error-text {
-          color: #ff6b6b;
+          background: rgba(255, 0, 0, 0.1);
+          padding: 8px 12px;
+          border-radius: 8px;
           font-size: 14px;
+          color: #ff6b6b;
           margin-bottom: -10px;
         }
-        @media (max-width: 400px) {
+
+        @media (max-width: 500px) {
           .login-container {
-            width: 90vw;
             padding: 30px 20px;
           }
 
-          input[type="text"],
-          input[type="password"] {
+          input, button {
             font-size: 15px;
-            padding: 12px 14px;
           }
 
-          button {
-            font-size: 16px;
-            padding: 12px;
+          .login-title {
+            font-size: 24px;
           }
         }
       `}</style>
@@ -198,7 +202,9 @@ const SignIN = () => {
               role="button"
               aria-pressed={showPassword}
               tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowPassword(!showPassword); }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') setShowPassword(!showPassword);
+              }}
               title={showPassword ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}
             >
               {showPassword ? 'berkitish' : "ko'rsatish"}

@@ -148,64 +148,81 @@ const Orders = () => {
 
 const styles = {
   container: {
-    padding: '16px',
-    fontFamily: 'Arial, sans-serif',
+    padding: '24px',
+    fontFamily: 'Segoe UI, sans-serif',
+    backgroundColor: '#f4f6f8',
+    minHeight: '100vh',
   },
   heading: {
-    fontSize: '24px',
-    marginBottom: '16px',
-    color: '#222',
+    fontSize: '28px',
+    fontWeight: 'bold',
+    marginBottom: '20px',
+    color: '#333',
+    textAlign: 'center',
   },
   loading: {
     textAlign: 'center',
-    marginTop: '40px',
-    fontSize: '18px',
+    marginTop: '50px',
+    fontSize: '20px',
+    color: '#555',
   },
   buttonGroup: {
-    marginBottom: '16px',
+    marginBottom: '24px',
     display: 'flex',
     gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   toggleButton: {
-    padding: '10px 20px',
+    padding: '12px 24px',
     fontSize: '14px',
-    fontWeight: 'bold',
-    border: 'none',
-    borderRadius: '6px',
+    fontWeight: '600',
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    backgroundColor: '#eaeaea',
     cursor: 'pointer',
+    transition: 'all 0.3s ease',
   },
   tableWrapper: {
     overflowX: 'auto',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    minWidth: '600px',
+    minWidth: '900px',
   },
   th: {
-    backgroundColor: '#0057b7',    // ko‘k fon
-    color: '#fff',                 // oq matn
-    padding: '12px',
-    textAlign: 'center',           // markazga tekislandi
-    fontWeight: 'bold',
-    borderBottom: '1px solid #003f8a', // ozgina ko‘k rangli chiziq
-    userSelect: 'none',
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-    wordBreak: 'break-word',
-  },
-  timeTd: {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-    wordBreak: 'break-word',
-    width: '150px',
+    backgroundColor: '#1976d2',
+    color: '#fff',
+    padding: '14px 12px',
+    textAlign: 'center',
+    fontWeight: '600',
+    borderBottom: '1px solid #115293',
     whiteSpace: 'nowrap',
   },
+  td: {
+    padding: '12px 10px',
+    borderBottom: '1px solid #f0f0f0',
+    color: '#444',
+    fontSize: '14px',
+    verticalAlign: 'middle',
+    textAlign: 'center',
+    lineHeight: '1.4',
+  },
+  timeTd: {
+    padding: '12px 10px',
+    borderBottom: '1px solid #f0f0f0',
+    color: '#444',
+    fontSize: '14px',
+    verticalAlign: 'middle',
+    whiteSpace: 'nowrap',
+    textAlign: 'center',
+    lineHeight: '1.4',
+  },
 };
+
 
 export default Orders;

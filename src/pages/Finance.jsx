@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
-const initialFinancialData = {
-  revenue: 0,
-  expenses: {
-    productCost: 0,
-    laborCost: 0,
-    utilityCost: 0,
-    otherCost: 0,
-  },
-  profit: 0,
-  totalExpense: 0,
-};
+import './Finance.css';
 
 const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 
 const Finance = () => {
   const [allOrders, setAllOrders] = useState([]);
-  const [data, setData] = useState(initialFinancialData);
+  const [data, setData] = useState({
+    revenue: 0,
+    expenses: {
+      productCost: 0,
+      laborCost: 0,
+      utilityCost: 0,
+      otherCost: 0,
+    },
+    profit: 0,
+    totalExpense: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -29,23 +28,18 @@ const Finance = () => {
       setError(null);
       try {
         const ordersRes = await axios.get('https://suddocs.uz/order');
-
         const orders = ordersRes.data;
-
-        // Oyga qarab guruhlab olish
         const monthGroups = {};
         orders.forEach(order => {
-          const month = new Date(order.createdAt).getMonth(); // 0-based: 0=Jan
+          const month = new Date(order.createdAt).getMonth();
           if (!monthGroups[month]) monthGroups[month] = [];
           monthGroups[month].push(order);
         });
-
         const monthsWithOrders = Object.keys(monthGroups).map(m => parseInt(m));
         setAvailableMonths(monthsWithOrders);
         setAllOrders(orders);
-
         if (monthsWithOrders.length > 0) {
-          setSelectedMonth(monthsWithOrders[0]); // Default birinchi mavjud oyning zakazlari
+          setSelectedMonth(monthsWithOrders[0]);
         }
       } catch (err) {
         setError('Maʼlumotlarni olishda xatolik yuz berdi.');
@@ -54,54 +48,24 @@ const Finance = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   useEffect(() => {
     if (selectedMonth === null) return;
-
-    // Faqat tanlangan oydagi zakazlarni olish
     const monthlyOrders = allOrders.filter(order => {
       const orderMonth = new Date(order.createdAt).getMonth();
       return orderMonth === selectedMonth;
     });
-
     const revenue = monthlyOrders.reduce((sum, order) => sum + order.totalPrice, 0);
 
-    // Ixtiyoriy: xarajatlar API bo‘lsa shu yerda qo‘shing
-    const expenses = [
-      { category: 'Mahsulot', amount: 500000 },
-      { category: 'Xodim', amount: 700000 },
-      { category: 'Kommunal', amount: 200000 },
-      { category: 'Boshqa', amount: 100000 },
-    ];
-
+    // Hozircha xarajatlar qo'lda kiritilgan
     const expenseCategories = {
-      productCost: 0,
-      laborCost: 0,
-      utilityCost: 0,
-      otherCost: 0,
+      productCost: 300000,
+      laborCost: 150000,
+      utilityCost: 50000,
+      otherCost: 20000,
     };
-
-    expenses.forEach(({ category, amount }) => {
-      switch (category) {
-        case 'Mahsulot':
-          expenseCategories.productCost += amount;
-          break;
-        case 'Xodim':
-          expenseCategories.laborCost += amount;
-          break;
-        case 'Kommunal':
-          expenseCategories.utilityCost += amount;
-          break;
-        case 'Boshqa':
-          expenseCategories.otherCost += amount;
-          break;
-        default:
-          break;
-      }
-    });
 
     const totalExpense =
       expenseCategories.productCost +
@@ -119,19 +83,20 @@ const Finance = () => {
     });
   }, [selectedMonth, allOrders]);
 
-  if (loading) return <div style={{ padding: 20 }}>Yuklanmoqda...</div>;
-  if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
+  if (loading) return <div className="finance-loading">Yuklanmoqda...</div>;
+  if (error) return <div className="finance-error">{error}</div>;
 
   return (
-    <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h2>Moliyaviy Hisobotlar</h2>
+    <div className="finance-container">
+      <h2 className="finance-title">📊 Moliyaviy Hisobotlar</h2>
 
-      <div style={{ marginBottom: 20 }}>
-        <label>Oy tanlang: </label>
+      <div className="finance-filterWrapper">
+        <label htmlFor="month-select" className="finance-label">Oy tanlang:</label>
         <select
+          id="month-select"
           value={selectedMonth ?? ''}
           onChange={e => setSelectedMonth(parseInt(e.target.value))}
-          style={{ padding: '5px', marginLeft: '10px' }}
+          className="finance-select"
         >
           {availableMonths.map(month => (
             <option key={month} value={month}>
@@ -141,76 +106,55 @@ const Finance = () => {
         </select>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div style={cardStyle}>
-          <h3>Jami Daromad</h3>
-          <p>{data.revenue.toLocaleString()} so‘m</p>
+      <div className="finance-cardsRow">
+        <div className="finance-card finance-revenueCard">
+          <h3 className="finance-cardTitle">Jami Daromad</h3>
+          <p className="finance-cardValue">{data.revenue.toLocaleString()} so‘m</p>
         </div>
-        <div style={cardStyle}>
-          <h3>Jami Xarajatlar</h3>
-          <p>{data.totalExpense.toLocaleString()} so‘m</p>
+        <div className="finance-card finance-expenseCard">
+          <h3 className="finance-cardTitle">Jami Xarajatlar</h3>
+          <p className="finance-cardValue">{data.totalExpense.toLocaleString()} so‘m</p>
         </div>
       </div>
 
-      <div style={{ ...cardStyle, backgroundColor: '#ffe6e6', marginBottom: 20 }}>
-        <h3>Oylik Foyda</h3>
-        <p style={{ color: data.profit >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+      <div className="finance-card finance-profitCard">
+        <h3 className="finance-cardTitle">Oylik Foyda</h3>
+        <p className={`finance-profitValue ${data.profit >= 0 ? 'positive' : 'negative'}`}>
           {data.profit.toLocaleString()} so‘m
         </p>
       </div>
 
-      <div>
-        <h3>Xarajatlar Tahlili</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="finance-expensesAnalysis">
+        <h3 className="finance-cardTitle" style={{ marginBottom: 15 }}>Xarajatlar Tahlili</h3>
+        <table className="finance-table">
           <thead>
             <tr>
-              <th style={tableHeaderStyle}>Kategoriya</th>
-              <th style={tableHeaderStyle}>Miqdor</th>
+              <th className="finance-th">Kategoriya</th>
+              <th className="finance-th">Miqdor</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={tableCellStyle}>Mahsulot xarajatlari</td>
-              <td style={tableCellStyle}>{data.expenses.productCost.toLocaleString()} so‘m</td>
+              <td className="finance-td">Mahsulot xarajatlari</td>
+              <td className="finance-td">{data.expenses.productCost.toLocaleString()} so‘m</td>
             </tr>
             <tr>
-              <td style={tableCellStyle}>Xodimlar maoshi</td>
-              <td style={tableCellStyle}>{data.expenses.laborCost.toLocaleString()} so‘m</td>
+              <td className="finance-td">Xodimlar maoshi</td>
+              <td className="finance-td">{data.expenses.laborCost.toLocaleString()} so‘m</td>
             </tr>
             <tr>
-              <td style={tableCellStyle}>Kommunal xarajatlar</td>
-              <td style={tableCellStyle}>{data.expenses.utilityCost.toLocaleString()} so‘m</td>
+              <td className="finance-td">Kommunal xarajatlar</td>
+              <td className="finance-td">{data.expenses.utilityCost.toLocaleString()} so‘m</td>
             </tr>
             <tr>
-              <td style={tableCellStyle}>Boshqa xarajatlar</td>
-              <td style={tableCellStyle}>{data.expenses.otherCost.toLocaleString()} so‘m</td>
+              <td className="finance-td">Boshqa xarajatlar</td>
+              <td className="finance-td">{data.expenses.otherCost.toLocaleString()} so‘m</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
   );
-};
-
-const cardStyle = {
-  padding: '10px',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '8px',
-  width: '48%',
-  boxSizing: 'border-box',
-};
-
-const tableHeaderStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
-  textAlign: 'left',
-  backgroundColor: '#f9f9f9',
-  fontWeight: 'bold',
-};
-
-const tableCellStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
 };
 
 export default Finance;

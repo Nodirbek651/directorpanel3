@@ -7,6 +7,11 @@ const Orders = () => {
   const [showHistory, setShowHistory] = useState(() => {
     return localStorage.getItem('showHistory') === 'true';
   });
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return today;
+  });
+  const [showAllOrders, setShowAllOrders] = useState(false);
 
   const fetchOrders = () => {
     axios.get('https://suddocs.uz/order')
@@ -24,10 +29,9 @@ const Orders = () => {
     fetchOrders();
     const interval = setInterval(() => {
       fetchOrders();
-    }, 50000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
-
 
   const handleToggle = (value) => {
     setShowHistory(value);
@@ -42,6 +46,14 @@ const Orders = () => {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${year}.${month}.${day} ${hours}:${minutes}`;
+  };
+
+  const isSameDate = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
   };
 
   const getStatusBadge = (status) => {
@@ -64,7 +76,7 @@ const Orders = () => {
       case "cancelled":
         return <span style={{ ...commonStyle, backgroundColor: '#555' }}>Bekor qilindi</span>;
       case "completed":
-        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Bajarildi</span>;
+        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Mijoz oldida</span>;
       case "archive":
         return <span style={{ ...commonStyle, backgroundColor: 'blue' }}>Tugallangan</span>;
       default:
@@ -72,13 +84,28 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = showHistory
-    ? orders.filter(order =>
-        ['completed', 'cancelled', 'archive'].includes(order.status?.toLowerCase())
-      )
-    : orders.filter(order =>
-        ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase())
-      );
+  const handleShowAllOrders = () => {
+    setShowAllOrders(true);
+    setSelectedDate('');
+  };
+
+  const filteredOrders = orders.filter(order => {
+    // Agar "Barcha zakazlar" tugmasi bosilgan bo'lsa
+    if (showAllOrders) {
+      // Qaysi tugma aktiv bo'lsa shu kategoriyadagi barcha kunlik zakazlarni ko'rsatish
+      if (showHistory) {
+        return ['archive'].includes(order.status?.toLowerCase());
+      } else {
+        return ['completed', 'ready', 'cooking', 'pending'].includes(order.status?.toLowerCase());
+      }
+    }
+
+    const isHistoryStatus = ['archive'].includes(order.status?.toLowerCase());
+    const isCurrentStatus = ['completed', 'ready', 'cooking', 'pending'].includes(order.status?.toLowerCase());
+    const matchStatus = showHistory ? isHistoryStatus : isCurrentStatus;
+    const matchDate = selectedDate ? isSameDate(order.createdAt, selectedDate) : true;
+    return matchStatus && matchDate;
+  });
 
   if (loading) {
     return <div style={styles.loading}>Yuklanmoqda...</div>;
@@ -95,7 +122,10 @@ const Orders = () => {
             backgroundColor: !showHistory ? '#007bff' : '#e0e0e0',
             color: !showHistory ? '#fff' : '#333',
           }}
-          onClick={() => handleToggle(false)}
+          onClick={() => {
+            handleToggle(false);
+            setShowAllOrders(false);
+          }}
         >
           Hozirgi buyurtmalar
         </button>
@@ -105,9 +135,34 @@ const Orders = () => {
             backgroundColor: showHistory ? '#007bff' : '#e0e0e0',
             color: showHistory ? '#fff' : '#333',
           }}
-          onClick={() => handleToggle(true)}
+          onClick={() => {
+            handleToggle(true);
+            setShowAllOrders(false);
+          }}
         >
           Buyurtma tarixi
+        </button>
+      </div>
+
+      <div style={showHistory ? styles.dateFilterContainer : { display: 'none' }}>
+        <label htmlFor="dateFilter" style={styles.dateLabel}>
+          Sanani tanlang:
+        </label>
+        <input
+          id="dateFilter"
+          type="date"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setShowAllOrders(false);
+          }}
+          style={styles.dateInput}
+        />
+        <button
+          onClick={handleShowAllOrders}
+          style={styles.showAllButton}
+        >
+          Barcha zakazlar
         </button>
       </div>
 
@@ -129,7 +184,7 @@ const Orders = () => {
             {filteredOrders.map((order, index) => (
               <tr key={order._id || index}>
                 <td style={styles.td}>{index + 1}</td>
-                <td style={styles.td}>{order.tableNumber || 'Nomaʼlum'}</td>
+                <td style={styles.td}>{order.table?.number || 'Nomaʼlum'}</td>
                 <td style={styles.td}>
                   {order.orderItems?.map(item => `${item.product.name} (${item.count})`).join(', ')}
                 </td>
@@ -149,61 +204,108 @@ const Orders = () => {
 
 const styles = {
   container: {
-    padding: '16px',
-    fontFamily: 'Arial, sans-serif',
+    padding: '24px',
+    fontFamily: 'Segoe UI, sans-serif',
+    backgroundColor: '#f4f6f8',
+    minHeight: '100vh',
   },
   heading: {
-    fontSize: '24px',
-    marginBottom: '16px',
-    color: '#222',
+    fontSize: '28px',
+    fontWeight: 'bold',
+    marginBottom: '20px',
+    color: '#333',
+    textAlign: 'center',
   },
   loading: {
     textAlign: 'center',
-    marginTop: '40px',
-    fontSize: '18px',
+    marginTop: '50px',
+    fontSize: '20px',
+    color: '#555',
   },
   buttonGroup: {
     marginBottom: '16px',
     display: 'flex',
     gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   toggleButton: {
-    padding: '10px 20px',
+    padding: '12px 24px',
     fontSize: '14px',
-    fontWeight: 'bold',
+    fontWeight: '600',
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    backgroundColor: '#eaeaea',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  dateFilterContainer: {
+    marginBottom: '20px',
+    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  dateLabel: {
+    fontWeight: '600',
+  },
+  dateInput: {
+    padding: '8px 12px',
+    fontSize: '14px',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+  },
+  showAllButton: {
+    padding: '8px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#28a745',
+    color: '#fff',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
   },
   tableWrapper: {
     overflowX: 'auto',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    minWidth: '600px',
+    minWidth: '900px',
   },
   th: {
-    backgroundColor: '#f4f4f4',
-    padding: '12px',
-    textAlign: 'left',
-    fontWeight: 'bold',
-    borderBottom: '1px solid #ddd',
+    backgroundColor: '#1976d2',
+    color: '#fff',
+    padding: '14px 12px',
+    textAlign: 'center',
+    fontWeight: '600',
+    borderBottom: '1px solid #115293',
+    whiteSpace: 'nowrap',
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-    wordBreak: 'break-word',
+    padding: '12px 10px',
+    borderBottom: '1px solid #f0f0f0',
+    color: '#444',
+    fontSize: '14px',
+    verticalAlign: 'middle',
+    textAlign: 'center',
+    lineHeight: '1.4',
   },
   timeTd: {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-    wordBreak: 'break-word',
-    width: '150px',
+    padding: '12px 10px',
+    borderBottom: '1px solid #f0f0f0',
+    color: '#444',
+    fontSize: '14px',
+    verticalAlign: 'middle',
     whiteSpace: 'nowrap',
+    textAlign: 'center',
+    lineHeight: '1.4',
   },
 };
 

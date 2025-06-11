@@ -1,78 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './Finance.css';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 
-const initialFinancialData = {
-  revenue: 0,
-  expenses: {
-    productCost: 0,
-    laborCost: 0,
-    utilityCost: 0,
-    otherCost: 0,
-  },
-  profit: 0,
-  totalExpense: 0,
-};
+const monthNames = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+];
 
 const Finance = () => {
-  const [data, setData] = useState(initialFinancialData);
+  const [orders, setOrders] = useState([]);
+  const [monthlyProfits, setMonthlyProfits] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [currentMonthData, setCurrentMonthData] = useState({ revenue: 0, profit: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Ma'lumotlarni yuklash va oylar bo'yicha guruhlash
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchOrders = async () => {
       setLoading(true);
       setError(null);
       try {
-        const ordersRes = await axios.get('https://suddocs.uz/order');
-        const expensesRes = await axios.get('https://suddocs.uz/order');
+        const response = await axios.get('https://suddocs.uz/order');
+        const ordersData = response.data;
+        setOrders(ordersData);
 
-        const orders = ordersRes.data;
-        const expenses = expensesRes.data;
-
-       
-        const revenue = orders.reduce((sum, order) => sum + order.totalPrice , 0);
-
-        const expenseCategories = {
-          productCost: 0,
-          laborCost: 0,
-          utilityCost: 0,
-          otherCost: 0,
-        };
-
-        expenses.forEach(({ category, amount }) => {
-          switch (category) {
-            case 'Mahsulot':
-              expenseCategories.productCost += amount;
-              break;
-            case 'Xodim':
-              expenseCategories.laborCost += amount;
-              break;
-            case 'Kommunal':
-              expenseCategories.utilityCost += amount;
-              break;
-            case 'Boshqa':
-              expenseCategories.otherCost += amount;
-              break;
-            default:
-              break;
-          }
+        // Oylar bo'yicha daromadlarni guruhlash
+        const grouped = {};
+        ordersData.forEach(order => {
+          const month = new Date(order.createdAt).getMonth();
+          if (!grouped[month]) grouped[month] = 0;
+          grouped[month] += order.totalPrice;
         });
 
+        // Foyda (hozircha jami daromad sifatida olinmoqda)
+        const profits = Object.keys(grouped).map(month => ({
+          month: parseInt(month),
+          revenue: grouped[month],
+          profit: grouped[month],
+        }));
 
-        const totalExpense =
-          expenseCategories.productCost +
-          expenseCategories.laborCost +
-          expenseCategories.utilityCost +
-          expenseCategories.otherCost;
+        setMonthlyProfits(profits);
 
-        const profit = revenue - totalExpense;
-
-        setData({
-          revenue,
-          expenses: expenseCategories,
-          profit,
-          totalExpense,
-        });
+        if (profits.length > 0) setSelectedMonth(profits[0].month);
       } catch (err) {
         setError('Maʼlumotlarni olishda xatolik yuz berdi.');
         console.error(err);
@@ -81,86 +59,82 @@ const Finance = () => {
       }
     };
 
-    fetchData();
+    fetchOrders();
   }, []);
 
-  if (loading) return <div style={{ padding: 20 }}>Yuklanmoqda...</div>;
-  if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
+  // Tanlangan oy uchun ma'lumotlarni yangilash
+  useEffect(() => {
+    if (selectedMonth === null) return;
+    const monthProfit = monthlyProfits.find(p => p.month === selectedMonth);
+    if (monthProfit) {
+      setCurrentMonthData({
+        revenue: monthProfit.revenue,
+        profit: monthProfit.profit,
+      });
+    }
+  }, [selectedMonth, monthlyProfits]);
+
+  // Grafik uchun ma'lumot
+  const chartData = monthlyProfits.map(p => ({
+    name: monthNames[p.month],
+    foyda: p.profit,
+  }));
+
+  if (loading) return <div className="finance-loading">Yuklanmoqda...</div>;
+  if (error) return <div className="finance-error">{error}</div>;
 
   return (
-    <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h2>Moliyaviy Hisobotlar</h2>
+    <div className="finance-container">
+      <h2 className="finance-title">📊 Foyda Tahlili (Oylar bo‘yicha)</h2>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div style={cardStyle}>
-          <h3>Jami Daromad</h3>
-          <p>{data.revenue.toLocaleString()} so‘m</p>
+      <div className="finance-filterWrapper">
+        <label htmlFor="month-select" className="finance-label">Oy tanlang:</label>
+        <select
+          id="month-select"
+          value={selectedMonth ?? ''}
+          onChange={e => setSelectedMonth(parseInt(e.target.value))}
+          className="finance-select"
+        >
+          {monthlyProfits.map(p => (
+            <option key={p.month} value={p.month}>
+              {monthNames[p.month]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="finance-cardsRow">
+        <div className="finance-card finance-revenueCard">
+          <h3 className="finance-cardTitle">Jami Daromad</h3>
+          <p className="finance-cardValue">{currentMonthData.revenue.toLocaleString()} so‘m</p>
         </div>
-        <div style={cardStyle}>
-          <h3>Jami Xarajatlar</h3>
-          <p>{data.totalExpense.toLocaleString()} so‘m</p>
+        <div className="finance-card finance-profitCard">
+          <h3 className="finance-cardTitle">Oylik Foyda</h3>
+          <p className={`finance-profitValue ${currentMonthData.profit >= 0 ? 'positive' : 'negative'}`}>
+            {currentMonthData.profit.toLocaleString()} so‘m
+          </p>
         </div>
       </div>
 
-      <div style={{ ...cardStyle, backgroundColor: '#ffe6e6', marginBottom: 20 }}>
-        <h3>Oylik Foyda</h3>
-        <p style={{ color: data.profit >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
-          {data.profit.toLocaleString()} so‘m
-        </p>
-      </div>
-
-      <div>
-        <h3>Xarajatlar Tahlili</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>Kategoriya</th>
-              <th style={tableHeaderStyle}>Miqdor</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={tableCellStyle}>Mahsulot xarajatlari</td>
-              <td style={tableCellStyle}>{data.expenses.productCost.toLocaleString()} so‘m</td>
-            </tr>
-            <tr>
-              <td style={tableCellStyle}>Xodimlar maoshi</td>
-              <td style={tableCellStyle}>{data.expenses.laborCost.toLocaleString()} so‘m</td>
-            </tr>
-            <tr>
-              <td style={tableCellStyle}>Kommunal xarajatlar</td>
-              <td style={tableCellStyle}>{data.expenses.utilityCost.toLocaleString()} so‘m</td>
-            </tr>
-            <tr>
-              <td style={tableCellStyle}>Boshqa xarajatlar</td>
-              <td style={tableCellStyle}>{data.expenses.otherCost.toLocaleString()} so‘m</td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="finance-chartWrapper">
+        <h3 className="finance-cardTitle">📈 Grafik: Foyda Oylar bo‘yicha</h3>
+        <div style={{ overflowX: 'auto' }}>
+          <BarChart
+            width={400}       // kichikroq kenglik
+            height={350}      // balandroq grafik
+            data={chartData}
+            margin={{ top: 10, right: 20, bottom: 50, left: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" angle={-30} textAnchor="end" />
+            <YAxis domain={[0, max => Math.ceil(max * 1.2)]} />
+            <Tooltip />
+            <Bar dataKey="foyda" fill="#4caf50" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </div>
       </div>
     </div>
   );
-};
-
-const cardStyle = {
-  padding: '10px',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '8px',
-  width: '48%',
-  boxSizing: 'border-box',
-};
-
-const tableHeaderStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
-  textAlign: 'left',
-  backgroundColor: '#f9f9f9',
-  fontWeight: 'bold',
-};
-
-const tableCellStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
 };
 
 export default Finance;

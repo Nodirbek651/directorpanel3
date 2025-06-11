@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/NavBar';
+import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Order';
 import Finance from './pages/Finance';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import Logout from './pages/Logout';
-import SignIn from './pages/SignIn';
-
-import { Link } from 'react-router-dom';
+import SignIn from './pages/SignIN';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('authToken');
@@ -18,7 +17,7 @@ const PrivateRoute = ({ children }) => {
 
 const PublicRoute = ({ children }) => {
   const token = localStorage.getItem('authToken');
-  return token ? <Navigate to="/dashboard" replace /> : children;
+  return token ? <Navigate to="/ " replace /> : children;
 };
 
 const AppContent = () => {
@@ -28,51 +27,13 @@ const AppContent = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
-  // Navbar faqat login sahifasida ko‘rinmas bo‘lsin
+  // Navbar va Sidebar faqat login sahifasidan boshqa sahifalarda ko‘rinadi
   const showNavbar = location.pathname !== '/login';
 
   return (
     <div style={{ display: 'flex' }}>
       {showNavbar && (
-        <div
-          style={{
-            padding: '0',
-            width: isSidebarOpen ? '250px' : '0',
-            transition: 'width 0.3s ease',
-            overflow: 'hidden',
-            backgroundColor: '#333',
-            height: '100vh',
-            color: '#fff',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            zIndex: 100,
-          }}
-        >
-          <button
-            onClick={closeSidebar}
-            style={{
-              margin: '10px',
-              padding: '10px',
-              backgroundColor: '#444',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left',
-            }}
-          >
-            ← Back
-          </button>
-          <ul style={{ listStyle: 'none', padding: '20px' }}>
-            <li><Link to="/dashboard" onClick={closeSidebar} style={linkStyle}>Bosh sahifa</Link></li>
-            <li><Link to="/orders" onClick={closeSidebar} style={linkStyle}>Buyurtmalar</Link></li>
-            <li><Link to="/finance" onClick={closeSidebar} style={linkStyle}>Moliyaviy hisobotlar</Link></li>
-            <li><Link to="/employees" onClick={closeSidebar} style={linkStyle}>Xodimlar</Link></li>
-            <li><Link to="/settings" onClick={closeSidebar} style={linkStyle}>Sozlamalar</Link></li>
-            <li><Link to="/logout" onClick={closeSidebar} style={linkStyle}>Chiqish</Link></li>
-          </ul>
-        </div>
+        <Sidebar isSidebarOpen={isSidebarOpen} closeSidebar={closeSidebar} />
       )}
 
       <div
@@ -141,12 +102,5 @@ const App = () => (
     <AppContent />
   </Router>
 );
-
-const linkStyle = {
-  color: 'white',
-  textDecoration: 'none',
-  display: 'block',
-  padding: '8px 0',
-};
 
 export default App;

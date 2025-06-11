@@ -5,7 +5,6 @@ const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
 
   const goToLogoutPage = () => {
- 
     navigate('/logout');
   };
 
@@ -84,12 +83,11 @@ const Navbar = ({ toggleSidebar }) => {
             userSelect: 'none',
           }}
         >
-      
+          {/* LOGO nomi kiriting */}
         </h1>
       </div>
 
- 
-      
+      {/* Logout tugmasi */}
       <button
         onClick={goToLogoutPage}
         style={{
@@ -117,13 +115,6 @@ const Navbar = ({ toggleSidebar }) => {
       >
         Chiqish
       </button>
- 
-      <div style={styles.rightSection}>
-        <button style={styles.button} onClick={goToLogoutPage}>
-          Chiqish
-        </button>
-      </div>
- 
     </header>
   );
 };

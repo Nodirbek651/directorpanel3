@@ -10,9 +10,15 @@ const Logout = () => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('userRole');
       localStorage.removeItem('user');
+ 
       navigate('/login');
     } else {
       navigate(-1); 
+       
+      navigate('/login'); // Login sahifasiga qaytadi
+    } else {
+      navigate(-1); // Oldingi sahifaga qaytadi
+ 
     }
   };
 
@@ -20,7 +26,11 @@ const Logout = () => {
     handleLogout();
   }, []);
 
+ 
   return null;
+ 
+  return null; // Sahifada hech narsa ko‘rsatmaymiz, faqat dialog
+ 
 };
 
 export default Logout;

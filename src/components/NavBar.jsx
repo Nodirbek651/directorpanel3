@@ -5,6 +5,7 @@ const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
 
   const goToLogoutPage = () => {
+ 
     navigate('/logout');
   };
 
@@ -87,6 +88,7 @@ const Navbar = ({ toggleSidebar }) => {
         </h1>
       </div>
 
+ 
       
       <button
         onClick={goToLogoutPage}
@@ -115,6 +117,13 @@ const Navbar = ({ toggleSidebar }) => {
       >
         Chiqish
       </button>
+ 
+      <div style={styles.rightSection}>
+        <button style={styles.button} onClick={goToLogoutPage}>
+          Chiqish
+        </button>
+      </div>
+ 
     </header>
   );
 };

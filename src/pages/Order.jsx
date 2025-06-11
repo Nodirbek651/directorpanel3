@@ -7,6 +7,10 @@ const Orders = () => {
   const [showHistory, setShowHistory] = useState(() => {
     return localStorage.getItem('showHistory') === 'true';
   });
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return today;
+  });
 
   const fetchOrders = () => {
     axios.get('https://suddocs.uz/order')
@@ -43,6 +47,14 @@ const Orders = () => {
     return `${year}.${month}.${day} ${hours}:${minutes}`;
   };
 
+  const isSameDate = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
+
   const getStatusBadge = (status) => {
     const commonStyle = {
       color: '#fff',
@@ -63,7 +75,7 @@ const Orders = () => {
       case "cancelled":
         return <span style={{ ...commonStyle, backgroundColor: '#555' }}>Bekor qilindi</span>;
       case "completed":
-        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Bajarildi</span>;
+        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Mijoz oldida</span>;
       case "archive":
         return <span style={{ ...commonStyle, backgroundColor: 'blue' }}>Tugallangan</span>;
       default:
@@ -71,13 +83,13 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = showHistory
-    ? orders.filter(order =>
-        ['completed', 'cancelled', 'archive'].includes(order.status?.toLowerCase())
-      )
-    : orders.filter(order =>
-        ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase())
-      );
+  const filteredOrders = orders.filter(order => {
+    const isHistoryStatus = ['completed', 'cancelled', 'archive'].includes(order.status?.toLowerCase());
+    const isCurrentStatus = ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase());
+    const matchStatus = showHistory ? isHistoryStatus : isCurrentStatus;
+    const matchDate = isSameDate(order.createdAt, selectedDate);
+    return matchStatus && matchDate;
+  });
 
   if (loading) {
     return <div style={styles.loading}>Yuklanmoqda...</div>;
@@ -110,6 +122,24 @@ const Orders = () => {
         </button>
       </div>
 
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <label htmlFor="dateFilter" style={{ marginRight: '10px', fontWeight: '600' }}>
+          Sanani tanlang:
+        </label>
+        <input
+          id="dateFilter"
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            fontSize: '14px',
+            borderRadius: '6px',
+            border: '1px solid #ccc',
+          }}
+        />
+      </div>
+
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
@@ -128,7 +158,7 @@ const Orders = () => {
             {filteredOrders.map((order, index) => (
               <tr key={order._id || index}>
                 <td style={styles.td}>{index + 1}</td>
-                <td style={styles.td}>{order.table.number || 'Nomaʼlum'}</td>
+                <td style={styles.td}>{order.table?.number || 'Nomaʼlum'}</td>
                 <td style={styles.td}>
                   {order.orderItems?.map(item => `${item.product.name} (${item.count})`).join(', ')}
                 </td>
@@ -167,7 +197,7 @@ const styles = {
     color: '#555',
   },
   buttonGroup: {
-    marginBottom: '24px',
+    marginBottom: '16px',
     display: 'flex',
     gap: '12px',
     flexWrap: 'wrap',
@@ -223,6 +253,5 @@ const styles = {
     lineHeight: '1.4',
   },
 };
-
 
 export default Orders;

@@ -11,7 +11,6 @@ const Orders = () => {
     const today = new Date().toISOString().split('T')[0];
     return today;
   });
-  const [showAllOrders, setShowAllOrders] = useState(false);
 
   const fetchOrders = () => {
     axios.get('https://alikafecrm.uz/order')
@@ -84,24 +83,9 @@ const Orders = () => {
     }
   };
 
-  const handleShowAllOrders = () => {
-    setShowAllOrders(true);
-    setSelectedDate('');
-  };
-
   const filteredOrders = orders.filter(order => {
-    // Agar "Barcha zakazlar" tugmasi bosilgan bo'lsa
-    if (showAllOrders) {
-      // Qaysi tugma aktiv bo'lsa shu kategoriyadagi barcha kunlik zakazlarni ko'rsatish
-      if (showHistory) {
-        return ['archive'].includes(order.status?.toLowerCase());
-      } else {
-        return ['completed', 'ready', 'cooking', 'pending'].includes(order.status?.toLowerCase());
-      }
-    }
-
-    const isHistoryStatus = ['archive'].includes(order.status?.toLowerCase());
-    const isCurrentStatus = ['completed', 'ready', 'cooking', 'pending'].includes(order.status?.toLowerCase());
+    const isHistoryStatus = ['archive', 'completed'].includes(order.status?.toLowerCase());
+    const isCurrentStatus = ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase());
     const matchStatus = showHistory ? isHistoryStatus : isCurrentStatus;
     const matchDate = selectedDate ? isSameDate(order.createdAt, selectedDate) : true;
     return matchStatus && matchDate;
@@ -122,10 +106,7 @@ const Orders = () => {
             backgroundColor: !showHistory ? '#007bff' : '#e0e0e0',
             color: !showHistory ? '#fff' : '#333',
           }}
-          onClick={() => {
-            handleToggle(false);
-            setShowAllOrders(false);
-          }}
+          onClick={() => handleToggle(false)}
         >
           Hozirgi buyurtmalar
         </button>
@@ -135,16 +116,13 @@ const Orders = () => {
             backgroundColor: showHistory ? '#007bff' : '#e0e0e0',
             color: showHistory ? '#fff' : '#333',
           }}
-          onClick={() => {
-            handleToggle(true);
-            setShowAllOrders(false);
-          }}
+          onClick={() => handleToggle(true)}
         >
           Buyurtma tarixi
         </button>
       </div>
 
-      <div style={showHistory ? styles.dateFilterContainer : { display: 'none' }}>
+      <div style={styles.dateFilterContainer}>
         <label htmlFor="dateFilter" style={styles.dateLabel}>
           Sanani tanlang:
         </label>
@@ -152,18 +130,9 @@ const Orders = () => {
           id="dateFilter"
           type="date"
           value={selectedDate}
-          onChange={(e) => {
-            setSelectedDate(e.target.value);
-            setShowAllOrders(false);
-          }}
+          onChange={(e) => setSelectedDate(e.target.value)}
           style={styles.dateInput}
         />
-        <button
-          onClick={handleShowAllOrders}
-          style={styles.showAllButton}
-        >
-          Barcha zakazlar
-        </button>
       </div>
 
       <div style={styles.tableWrapper}>
@@ -256,17 +225,6 @@ const styles = {
     fontSize: '14px',
     borderRadius: '6px',
     border: '1px solid #ccc',
-  },
-  showAllButton: {
-    padding: '8px 16px',
-    fontSize: '14px',
-    fontWeight: '600',
-    backgroundColor: '#28a745',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s ease',
   },
   tableWrapper: {
     overflowX: 'auto',

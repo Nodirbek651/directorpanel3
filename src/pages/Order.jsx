@@ -14,7 +14,7 @@ const Orders = () => {
   const [showAllOrders, setShowAllOrders] = useState(false);
 
   const fetchOrders = () => {
-    axios.get('https://suddocs.uz/order')
+    axios.get('https://alikafecrm.uz/order')
       .then(response => {
         setOrders(response.data);
         setLoading(false);

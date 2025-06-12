@@ -22,7 +22,7 @@ const Employees = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get('https://suddocs.uz/user')
+    axios.get('https://alikafecrm.uz/user')
       .then(response => {
         setEmployees(response.data);
         setLoading(false);

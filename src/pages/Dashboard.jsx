@@ -33,7 +33,7 @@ const WeeklyMonthlyStats = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get('https://suddocs.uz/order');
+      const { data } = await axios.get('https://alikafecrm.uz/order');
       if (!isEqual(data, ordersRef.current)) {
         ordersRef.current = data;
         setOrders(data);

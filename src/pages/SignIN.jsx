@@ -16,7 +16,7 @@ const SignIN = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://suddocs.uz/user");
+        const response = await axios.get("https://alikafecrm.uz/user");
         setUsers(response.data);
       } catch (err) {
         console.error("Xatolik:", err);

@@ -29,7 +29,7 @@ const Finance = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('https://suddocs.uz/order');
+        const response = await axios.get('https://alikafecrm.uz/order');
         const ordersData = response.data;
         setOrders(ordersData);
 

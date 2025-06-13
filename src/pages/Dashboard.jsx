@@ -1,12 +1,28 @@
 import React, { useEffect, useState, useRef, memo, useMemo } from 'react';
 import axios from 'axios';
-import isEqual from 'lodash.isequal';
+
+// Umumiy buyurtmalar summasini ko'rsatish uchun komponent
+const GrandSummary = ({ total, lastUpdated, loading }) => (
+  <div style={styles.totalBox}>
+    <h3 style={styles.totalTitle}>📦 Umumiy Buyurtmalar Summasi</h3>
+    {loading ? (
+      <p>Yuklanmoqda...</p>
+    ) : (
+      <>
+        <p style={styles.totalAmount}>{Math.round(total).toLocaleString()} so‘m</p>
+        {lastUpdated && (
+          <p style={styles.updatedText}>Yangilangan: {lastUpdated.toLocaleTimeString()}</p>
+        )}
+      </>
+    )}
+  </div>
+);
 
 const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   <tr style={index % 2 === 0 ? styles.evenRow : styles.oddRow}>
     <td style={styles.td}>{day}</td>
     <td style={styles.td}>{count}</td>
-    <td style={styles.td}>{total.toLocaleString()}</td>
+    <td style={styles.td}>{Math.round(total).toLocaleString()}</td>
     <td style={styles.td}>{Math.round(fee).toLocaleString()}</td>
     <td style={styles.td}>{Math.round(totalWithFee).toLocaleString()}</td>
   </tr>
@@ -21,26 +37,26 @@ const WeeklyMonthlyStats = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const ordersRef = useRef([]);
+  const orderSumRef = useRef(0);
   const year = new Date().getFullYear();
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 20000);
+    const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchOrders = async () => {
-    setLoading(true);
     try {
       const { data } = await axios.get('https://alikafecrm.uz/order');
-      if (!isEqual(data, ordersRef.current)) {
-        ordersRef.current = data;
+      const newSum = data.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      if (newSum !== orderSumRef.current) {
+        orderSumRef.current = newSum;
         setOrders(data);
+        setLastUpdated(new Date());
       }
-      setLastUpdated(new Date());
     } catch (error) {
-      console.error('Xatolik:', error);
+      console.error('Buyurtmalarni olishda xatolik:', error);
     } finally {
       setLoading(false);
     }
@@ -54,12 +70,13 @@ const WeeklyMonthlyStats = () => {
       for (let d = 1; d <= daysCount; d++) {
         stats[d] = { count: 0, total: 0, fee: 0, totalWithFee: 0 };
       }
-
       orders.forEach(order => {
+        if (!order?.createdAt) return;
         const date = new Date(order.createdAt);
+        if (isNaN(date)) return;
         if (date.getMonth() === m && date.getFullYear() === year) {
           const day = date.getDate();
-          const base = order.totalPrice;
+          const base = order.totalPrice || 0;
           const serviceFee = base * 0.04;
           stats[day].count++;
           stats[day].total += base;
@@ -67,11 +84,9 @@ const WeeklyMonthlyStats = () => {
           stats[day].totalWithFee += base + serviceFee;
         }
       });
-
       const totalCount = Object.values(stats).reduce((a, v) => a + v.count, 0);
       statsByMonth[m] = { stats, totalCount };
     }
-
     return statsByMonth;
   }, [orders, year]);
 
@@ -82,11 +97,9 @@ const WeeklyMonthlyStats = () => {
     const filtered = Object.entries(monthStats)
       .filter(([_, data]) => data.totalCount > 0)
       .map(([index]) => Number(index));
-
     if (!filtered.includes(selectedMonth)) {
       filtered.push(selectedMonth);
     }
-
     return filtered.sort((a, b) => a - b);
   }, [monthStats, selectedMonth]);
 
@@ -97,26 +110,19 @@ const WeeklyMonthlyStats = () => {
 
   return (
     <div style={styles.container}>
+      <GrandSummary total={orderSumRef.current} lastUpdated={lastUpdated} loading={loading} />
       <h2 style={styles.heading}>{months[selectedMonth]} oyi statistikasi</h2>
 
       <div style={styles.selectContainer}>
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(Number(e.target.value))}
-          style={styles.select}
-        >
+        <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} style={styles.select}>
           {availableMonths.map((index) => (
-            <option key={index} value={index}>
-              {months[index]}
-            </option>
+            <option key={index} value={index}>{months[index]}</option>
           ))}
         </select>
       </div>
 
       {lastUpdated && (
-        <div style={styles.updated}>
-          So‘nggi yangilanish: {lastUpdated.toLocaleTimeString()}
-        </div>
+        <div style={styles.updated}>Songgi yangilanish: {lastUpdated.toLocaleTimeString()}</div>
       )}
 
       {loading ? (
@@ -139,7 +145,7 @@ const WeeklyMonthlyStats = () => {
                 const { count, total, fee, totalWithFee } = currentStats[day] || {};
                 return (
                   <StatRow
-                    key={day}
+                    key={`stat-${selectedMonth}-${day}`}
                     index={idx}
                     day={day}
                     count={count || 0}
@@ -152,7 +158,7 @@ const WeeklyMonthlyStats = () => {
               <tr style={styles.summaryRow}>
                 <td style={styles.td}>Jami</td>
                 <td style={styles.td}>{totalCount}</td>
-                <td style={styles.td}>{grandTotal.toLocaleString()}</td>
+                <td style={styles.td}>{Math.round(grandTotal).toLocaleString()}</td>
                 <td style={styles.td}>{Math.round(grandFee).toLocaleString()}</td>
                 <td style={styles.td}>{Math.round(grandWithFee).toLocaleString()}</td>
               </tr>
@@ -232,6 +238,31 @@ const styles = {
   summaryRow: {
     backgroundColor: '#eaf2ff',
     fontWeight: 'bold',
+    fontSize: 15,
+    color: '#0d47a1',
+  },
+  totalBox: {
+    backgroundColor: '#e3f2fd',
+    padding: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    borderRadius: 10,
+    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+  },
+  totalTitle: {
+    fontSize: 20,
+    marginBottom: 6,
+    color: '#1565c0',
+  },
+  totalAmount: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#0d47a1',
+  },
+  updatedText: {
+    fontSize: 12,
+    marginTop: 6,
+    color: '#555',
   },
 };
 

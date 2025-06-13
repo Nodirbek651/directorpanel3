@@ -15,7 +15,19 @@ const Orders = () => {
   const fetchOrders = () => {
     axios.get('https://alikafecrm.uz/order')
       .then(response => {
-        setOrders(response.data);
+        const updatedOrders = response.data.map(order => {
+          // totalPrice ni qayta hisoblaymiz
+          const calculatedTotal = order.orderItems?.reduce((acc, item) => {
+            return acc + (item.product?.price || 0) * item.count;
+          }, 0);
+  
+          return {
+            ...order,
+            totalPrice: calculatedTotal // yangilangan narx
+          };
+        });
+  
+        setOrders(updatedOrders);
         setLoading(false);
       })
       .catch(error => {
@@ -23,6 +35,7 @@ const Orders = () => {
         setLoading(false);
       });
   };
+  
 
   useEffect(() => {
     fetchOrders();

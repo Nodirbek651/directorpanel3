@@ -1,28 +1,28 @@
-import React, { useEffect, useState, useRef, memo, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, memo } from 'react';
 import axios from 'axios';
 
-// Umumiy buyurtmalar summasini ko'rsatish uchun komponent
-const GrandSummary = ({ total, lastUpdated, loading }) => (
-  <div style={styles.totalBox}>
-    <h3 style={styles.totalTitle}>📦 Umumiy Buyurtmalar Summasi</h3>
-    {loading ? (
-      <p>Yuklanmoqda...</p>
-    ) : (
-      <>
-        <p style={styles.totalAmount}>{Math.round(total).toLocaleString()} so‘m</p>
-        {lastUpdated && (
-          <p style={styles.updatedText}>Yangilangan: {lastUpdated.toLocaleTimeString()}</p>
-        )}
-      </>
-    )}
-  </div>
-);
+// Umumiy buyurtmalar summasi komponenti
+const GrandSummary = ({ orders }) => {
+  const total = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+  const totalFee = total * 0.04;
+  const totalWithFee = total + totalFee;
 
+  return (
+    <div style={styles.totalBox}>
+      <h3 style={styles.totalTitle}>📦 Umumiy Buyurtmalar</h3>
+      <p style={styles.totalAmount}>Asl: {total.toLocaleString()} so‘m</p>
+      <p style={styles.totalAmount}>Xizmat haqi: {Math.round(totalFee).toLocaleString()} so‘m</p>
+      <p style={styles.totalAmount}>Jami: {Math.round(totalWithFee).toLocaleString()} so‘m</p>
+    </div>
+  );
+};
+
+// Har bir jadval qatori
 const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   <tr style={index % 2 === 0 ? styles.evenRow : styles.oddRow}>
     <td style={styles.td}>{day}</td>
     <td style={styles.td}>{count}</td>
-    <td style={styles.td}>{Math.round(total).toLocaleString()}</td>
+    <td style={styles.td}>{total.toLocaleString()}</td>
     <td style={styles.td}>{Math.round(fee).toLocaleString()}</td>
     <td style={styles.td}>{Math.round(totalWithFee).toLocaleString()}</td>
   </tr>
@@ -32,12 +32,11 @@ const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avg
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const WeeklyMonthlyStats = () => {
-  const currentMonthIndex = new Date().getMonth();
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const orderSumRef = useRef(0);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const ordersRef = useRef('');
   const year = new Date().getFullYear();
 
   useEffect(() => {
@@ -48,11 +47,20 @@ const WeeklyMonthlyStats = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get('https://alikafecrm.uz/order');
-      const newSum = data.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-      if (newSum !== orderSumRef.current) {
-        orderSumRef.current = newSum;
-        setOrders(data);
+      const response = await axios.get('https://alikafecrm.uz/order');
+
+      // totalPrice ni orderItems asosida hisoblash
+      const updatedOrders = response.data.map(order => {
+        const calculatedTotal = order.orderItems?.reduce((acc, item) => {
+          return acc + (item.product?.price || 0) * item.count;
+        }, 0);
+        return { ...order, totalPrice: calculatedTotal || 0 };
+      });
+
+      const str = JSON.stringify(updatedOrders);
+      if (str !== ordersRef.current) {
+        ordersRef.current = str;
+        setOrders(updatedOrders);
         setLastUpdated(new Date());
       }
     } catch (error) {
@@ -70,10 +78,9 @@ const WeeklyMonthlyStats = () => {
       for (let d = 1; d <= daysCount; d++) {
         stats[d] = { count: 0, total: 0, fee: 0, totalWithFee: 0 };
       }
+
       orders.forEach(order => {
-        if (!order?.createdAt) return;
         const date = new Date(order.createdAt);
-        if (isNaN(date)) return;
         if (date.getMonth() === m && date.getFullYear() === year) {
           const day = date.getDate();
           const base = order.totalPrice || 0;
@@ -84,9 +91,11 @@ const WeeklyMonthlyStats = () => {
           stats[day].totalWithFee += base + serviceFee;
         }
       });
+
       const totalCount = Object.values(stats).reduce((a, v) => a + v.count, 0);
       statsByMonth[m] = { stats, totalCount };
     }
+
     return statsByMonth;
   }, [orders, year]);
 
@@ -97,9 +106,7 @@ const WeeklyMonthlyStats = () => {
     const filtered = Object.entries(monthStats)
       .filter(([_, data]) => data.totalCount > 0)
       .map(([index]) => Number(index));
-    if (!filtered.includes(selectedMonth)) {
-      filtered.push(selectedMonth);
-    }
+    if (!filtered.includes(selectedMonth)) filtered.push(selectedMonth);
     return filtered.sort((a, b) => a - b);
   }, [monthStats, selectedMonth]);
 
@@ -110,13 +117,16 @@ const WeeklyMonthlyStats = () => {
 
   return (
     <div style={styles.container}>
-      <GrandSummary total={orderSumRef.current} lastUpdated={lastUpdated} loading={loading} />
+      <GrandSummary orders={orders} />
+
       <h2 style={styles.heading}>{months[selectedMonth]} oyi statistikasi</h2>
 
       <div style={styles.selectContainer}>
-        <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} style={styles.select}>
-          {availableMonths.map((index) => (
-            <option key={index} value={index}>{months[index]}</option>
+        <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={styles.select}>
+          {availableMonths.map(index => (
+            <option key={index} value={index}>
+              {months[index]}
+            </option>
           ))}
         </select>
       </div>
@@ -145,7 +155,7 @@ const WeeklyMonthlyStats = () => {
                 const { count, total, fee, totalWithFee } = currentStats[day] || {};
                 return (
                   <StatRow
-                    key={`stat-${selectedMonth}-${day}`}
+                    key={day}
                     index={idx}
                     day={day}
                     count={count || 0}
@@ -158,7 +168,7 @@ const WeeklyMonthlyStats = () => {
               <tr style={styles.summaryRow}>
                 <td style={styles.td}>Jami</td>
                 <td style={styles.td}>{totalCount}</td>
-                <td style={styles.td}>{Math.round(grandTotal).toLocaleString()}</td>
+                <td style={styles.td}>{grandTotal.toLocaleString()}</td>
                 <td style={styles.td}>{Math.round(grandFee).toLocaleString()}</td>
                 <td style={styles.td}>{Math.round(grandWithFee).toLocaleString()}</td>
               </tr>
@@ -238,8 +248,6 @@ const styles = {
   summaryRow: {
     backgroundColor: '#eaf2ff',
     fontWeight: 'bold',
-    fontSize: 15,
-    color: '#0d47a1',
   },
   totalBox: {
     backgroundColor: '#e3f2fd',
@@ -255,14 +263,9 @@ const styles = {
     color: '#1565c0',
   },
   totalAmount: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0d47a1',
-  },
-  updatedText: {
-    fontSize: 12,
-    marginTop: 6,
-    color: '#555',
   },
 };
 

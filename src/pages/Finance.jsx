@@ -30,12 +30,20 @@ const Finance = () => {
       setError(null);
       try {
         const response = await axios.get('https://alikafecrm.uz/order');
-        const ordersData = response.data;
-        setOrders(ordersData);
+
+        // totalPrice ni orderItems asosida hisoblash
+        const updatedOrders = response.data.map(order => {
+          const calculatedTotal = order.orderItems?.reduce((acc, item) => {
+            return acc + (item.product?.price || 0) * item.count;
+          }, 0);
+          return { ...order, totalPrice: calculatedTotal || 0 };
+        });
+
+        setOrders(updatedOrders);
 
         // Oylar bo'yicha daromadlarni guruhlash
         const grouped = {};
-        ordersData.forEach(order => {
+        updatedOrders.forEach(order => {
           const month = new Date(order.createdAt).getMonth();
           if (!grouped[month]) grouped[month] = 0;
           grouped[month] += order.totalPrice;
@@ -45,7 +53,7 @@ const Finance = () => {
         const profits = Object.keys(grouped).map(month => ({
           month: parseInt(month),
           revenue: grouped[month],
-          profit: grouped[month],
+          profit: grouped[month], // agar xizmat haqi yoki boshqa hisoblar bo‘lsa, bu yerda qo‘shish mumkin
         }));
 
         setMonthlyProfits(profits);
@@ -120,8 +128,8 @@ const Finance = () => {
         <h3 className="finance-cardTitle">📈 Grafik: Foyda Oylar bo‘yicha</h3>
         <div style={{ overflowX: 'auto' }}>
           <BarChart
-            width={400}       // kichikroq kenglik
-            height={350}      // balandroq grafik
+            width={400}
+            height={350}
             data={chartData}
             margin={{ top: 10, right: 20, bottom: 50, left: 10 }}
           >

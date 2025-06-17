@@ -1,23 +1,19 @@
 import React, { useEffect, useState, useRef, useMemo, memo } from 'react';
 import axios from 'axios';
 
-// Umumiy buyurtmalar summasi komponenti
-const GrandSummary = ({ orders }) => {
-  const total = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-  const totalFee = total * 0.04;
-  const totalWithFee = total + totalFee;
-
+// Танланган ой учун умумий сумма компонент
+const GrandSummary = ({ total, fee, totalWithFee, monthName }) => {
   return (
     <div style={styles.totalBox}>
-      <h3 style={styles.totalTitle}>📦 Umumiy Buyurtmalar</h3>
-      <p style={styles.totalAmount}>Asl: {total.toLocaleString()} so‘m</p>
-      <p style={styles.totalAmount}>Xizmat haqi: {Math.round(totalFee).toLocaleString()} so‘m</p>
-      <p style={styles.totalAmount}>Jami: {Math.round(totalWithFee).toLocaleString()} so‘m</p>
+      <h3 style={styles.totalTitle}>📦 {monthName} ойи буйича</h3>
+      <p style={styles.totalAmount}>Асосий сумма: {total.toLocaleString()} сўм</p>
+      <p style={styles.totalAmount}>Хизмат ҳақи: {Math.round(fee).toLocaleString()} сўм</p>
+      <p style={styles.totalAmount}>Жами: {Math.round(totalWithFee).toLocaleString()} сўм</p>
     </div>
   );
 };
 
-// Har bir jadval qatori
+// Ҳар бир жадвал қатори
 const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   <tr style={index % 2 === 0 ? styles.evenRow : styles.oddRow}>
     <td style={styles.td}>{day}</td>
@@ -28,7 +24,7 @@ const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   </tr>
 ));
 
-const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+const months = ['Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн', 'Июл', 'Август', 'Сентабр', 'Октябр', 'Ноябр', 'Декабр'];
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const WeeklyMonthlyStats = () => {
@@ -49,7 +45,6 @@ const WeeklyMonthlyStats = () => {
     try {
       const response = await axios.get('https://alikafecrm.uz/order');
 
-      // totalPrice ni orderItems asosida hisoblash
       const updatedOrders = response.data.map(order => {
         const calculatedTotal = order.orderItems?.reduce((acc, item) => {
           return acc + (item.product?.price || 0) * item.count;
@@ -64,7 +59,7 @@ const WeeklyMonthlyStats = () => {
         setLastUpdated(new Date());
       }
     } catch (error) {
-      console.error('Buyurtmalarni olishda xatolik:', error);
+      console.error('Буюртмаларни олишда хатолик:', error);
     } finally {
       setLoading(false);
     }
@@ -117,9 +112,14 @@ const WeeklyMonthlyStats = () => {
 
   return (
     <div style={styles.container}>
-      <GrandSummary orders={orders} />
+      <GrandSummary
+        total={grandTotal}
+        fee={grandFee}
+        totalWithFee={grandWithFee}
+        monthName={months[selectedMonth]}
+      />
 
-      <h2 style={styles.heading}>{months[selectedMonth]} oyi statistikasi</h2>
+      <h2 style={styles.heading}>{months[selectedMonth]} ойи статистикаси</h2>
 
       <div style={styles.selectContainer}>
         <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={styles.select}>
@@ -132,21 +132,21 @@ const WeeklyMonthlyStats = () => {
       </div>
 
       {lastUpdated && (
-        <div style={styles.updated}>Songgi yangilanish: {lastUpdated.toLocaleTimeString()}</div>
+        <div style={styles.updated}>Сўнгги янгиланиш: {lastUpdated.toLocaleTimeString()}</div>
       )}
 
       {loading ? (
-        <div>Yuklanmoqda...</div>
+        <div>Юкланмоқда...</div>
       ) : (
         <div style={styles.tableWrapper}>
           <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.th}>Kun</th>
-                <th style={styles.th}>Buyurtmalar</th>
-                <th style={styles.th}>Asl summa</th>
-                <th style={styles.th}>Xizmat haqi</th>
-                <th style={styles.th}>Jami</th>
+                <th style={styles.th}>Кун</th>
+                <th style={styles.th}>Буюртмалар</th>
+                <th style={styles.th}>Асосий сумма</th>
+                <th style={styles.th}>Хизмат ҳақи</th>
+                <th style={styles.th}>Жами</th>
               </tr>
             </thead>
             <tbody>
@@ -166,7 +166,7 @@ const WeeklyMonthlyStats = () => {
                 );
               })}
               <tr style={styles.summaryRow}>
-                <td style={styles.td}>Jami</td>
+                <td style={styles.td}>Жами</td>
                 <td style={styles.td}>{totalCount}</td>
                 <td style={styles.td}>{grandTotal.toLocaleString()}</td>
                 <td style={styles.td}>{Math.round(grandFee).toLocaleString()}</td>

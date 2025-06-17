@@ -80,20 +80,21 @@ const Orders = () => {
     };
     switch (status?.toLowerCase()) {
       case "pending":
-        return <span style={{ ...commonStyle, backgroundColor: 'red' }}>Yangi buyurtma</span>;
+        return <span style={{ ...commonStyle, backgroundColor: 'red' }}>Янги буюртма</span>;
       case "cooking":
-        return <span style={{ ...commonStyle, backgroundColor: 'orange' }}>Tayyorlanmoqda</span>;
+        return <span style={{ ...commonStyle, backgroundColor: 'orange' }}>Тайёрланмоқда</span>;
       case "ready":
-        return <span style={{ ...commonStyle, backgroundColor: 'green' }}>Buyurtma tayyor</span>;
+        return <span style={{ ...commonStyle, backgroundColor: 'green' }}>Буюртма тайёр</span>;
       case "cancelled":
-        return <span style={{ ...commonStyle, backgroundColor: '#555' }}>Bekor qilindi</span>;
+        return <span style={{ ...commonStyle, backgroundColor: '#555' }}>Бекор қилинди</span>;
       case "completed":
-        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Mijoz oldida</span>;
+        return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Мижоз олдида</span>;
       case "archive":
-        return <span style={{ ...commonStyle, backgroundColor: 'blue' }}>Tugallangan</span>;
+        return <span style={{ ...commonStyle, backgroundColor: 'blue' }}>Тугалланган</span>;
       default:
-        return <span style={{ ...commonStyle, backgroundColor: 'gray' }}>Nomaʼlum</span>;
+        return <span style={{ ...commonStyle, backgroundColor: 'gray' }}>Номаълум</span>;
     }
+    
   };
 
   const filteredOrders = orders.filter(order => {
@@ -110,7 +111,7 @@ const Orders = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>Buyurtmalar</h2>
+      <h2 style={styles.heading}>буюртмалар</h2>
 
       <div style={styles.buttonGroup}>
         <button
@@ -121,7 +122,7 @@ const Orders = () => {
           }}
           onClick={() => handleToggle(false)}
         >
-          Hozirgi buyurtmalar
+          хозирги буюртмалар
         </button>
         <button
           style={{
@@ -131,13 +132,13 @@ const Orders = () => {
           }}
           onClick={() => handleToggle(true)}
         >
-          Buyurtma tarixi
+          буюртма тарихи
         </button>
       </div>
 
       <div style={styles.dateFilterContainer}>
         <label htmlFor="dateFilter" style={styles.dateLabel}>
-          Sanani tanlang:
+        Санани танланг:
         </label>
         <input
           id="dateFilter"
@@ -152,14 +153,15 @@ const Orders = () => {
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>ID</th>
-              <th style={styles.th}>Stol raqami</th>
-              <th style={styles.th}>Mahsulotlar</th>
-              <th style={styles.th}>Jami narx</th>
-              <th style={styles.th}>Xizmat xaqi</th>
-              <th style={styles.th}>Umumiy to'lov</th>
-              <th style={styles.th}>Vaqt</th>
-              <th style={styles.th}>Holati</th>
+            <th style={styles.th}>№</th>
+<th style={styles.th}>Стол рақами</th>
+<th style={styles.th}>Маҳсулотлар</th>
+<th style={styles.th}>Жами нарх</th>
+<th style={styles.th}>Хизмат ҳақи</th>
+<th style={styles.th}>Умумий тўлов</th>
+<th style={styles.th}>Вақт</th>
+<th style={styles.th}>Ҳолати</th>
+
             </tr>
           </thead>
           <tbody>

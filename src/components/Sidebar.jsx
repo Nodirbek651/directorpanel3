@@ -14,12 +14,12 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
   const location = useLocation();
 
   const links = [
-    { to: "/dashboard", label: "Bosh sahifa", icon: <FaHome /> },
-    { to: "/orders", label: "Buyurtmalar", icon: <FaClipboardList /> },
-    { to: "/finance", label: "Moliyaviy hisobotlar", icon: <FaChartLine /> },
-    { to: "/employees", label: "Xodimlar", icon: <FaUsers /> },
-    { to: "/settings", label: "Sozlamalar", icon: <FaCog /> },
-    { to: "/logout", label: "Chiqish", icon: <FaSignOutAlt /> },
+    { to: "/dashboard", label: "Бош саҳифа", icon: <FaHome /> },
+    { to: "/orders", label: "Буюртмалар", icon: <FaClipboardList /> },
+    { to: "/finance", label: "Молиявий ҳисоботлар", icon: <FaChartLine /> },
+    { to: "/employees", label: "Ходимлар", icon: <FaUsers /> },
+    { to: "/settings", label: "Созламалар", icon: <FaCog /> },
+    { to: "/logout", label: "Чиқиш", icon: <FaSignOutAlt /> },
   ];
 
   return (
@@ -45,7 +45,7 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
     >
       <button
         onClick={closeSidebar}
-        aria-label="Close sidebar"
+        aria-label="Ёпиш"
         style={{
           margin: '0 20px 20px',
           padding: '10px 18px',
@@ -76,7 +76,7 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
         }}
       >
         <FaArrowLeft />
-        Ortga
+        Орқага
       </button>
 
       <nav style={{ flexGrow: 1, overflowY: 'auto' }}>

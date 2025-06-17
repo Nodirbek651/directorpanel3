@@ -10,100 +10,101 @@ import {
   Tooltip,
 } from 'recharts';
 
+// Ой номлари
 const monthNames = [
-  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентабрь', 'Октябрь', 'Ноябрь', 'Декабрь'
 ];
 
 const Finance = () => {
-  const [orders, setOrders] = useState([]);
-  const [monthlyProfits, setMonthlyProfits] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [currentMonthData, setCurrentMonthData] = useState({ revenue: 0, profit: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [buyurtmalar, setBuyurtmalar] = useState([]);
+  const [oylikFoydalar, setOyFoydalar] = useState([]);
+  const [tanlanganOy, setTanlanganOy] = useState(null);
+  const [oyMalumoti, setOyMalumoti] = useState({ daromad: 0, foyda: 0 });
+  const [yuklanmoqda, setYuklanmoqda] = useState(true);
+  const [xatolik, setXatolik] = useState(null);
 
-  // Ma'lumotlarni yuklash va oylar bo'yicha guruhlash
+  // 🟡 Маълумотларни олиш ва ойлар бўйича гуруҳлаш
   useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError(null);
+    const malumotlarniYuklash = async () => {
+      setYuklanmoqda(true);
+      setXatolik(null);
       try {
-        const response = await axios.get('https://alikafecrm.uz/order');
+        const javob = await axios.get('https://alikafecrm.uz/order');
 
-        // totalPrice ni orderItems asosida hisoblash
-        const updatedOrders = response.data.map(order => {
-          const calculatedTotal = order.orderItems?.reduce((acc, item) => {
+        // Хар бир буюртма учун умумий нархни ҳисоблаш
+        const yangilanganBuyurtmalar = javob.data.map(buyurtma => {
+          const jami = buyurtma.orderItems?.reduce((acc, item) => {
             return acc + (item.product?.price || 0) * item.count;
           }, 0);
-          return { ...order, totalPrice: calculatedTotal || 0 };
+          return { ...buyurtma, totalPrice: jami || 0 };
         });
 
-        setOrders(updatedOrders);
+        setBuyurtmalar(yangilanganBuyurtmalar);
 
-        // Oylar bo'yicha daromadlarni guruhlash
-        const grouped = {};
-        updatedOrders.forEach(order => {
-          const month = new Date(order.createdAt).getMonth();
-          if (!grouped[month]) grouped[month] = 0;
-          grouped[month] += order.totalPrice;
+        // 🟢 Ойлар бўйича даромадни гуруҳлаш
+        const guruhlangan = {};
+        yangilanganBuyurtmalar.forEach(buyurtma => {
+          const oy = new Date(buyurtma.createdAt).getMonth();
+          if (!guruhlangan[oy]) guruhlangan[oy] = 0;
+          guruhlangan[oy] += buyurtma.totalPrice;
         });
 
-        // Foyda (hozircha jami daromad sifatida olinmoqda)
-        const profits = Object.keys(grouped).map(month => ({
-          month: parseInt(month),
-          revenue: grouped[month],
-          profit: grouped[month], // agar xizmat haqi yoki boshqa hisoblar bo‘lsa, bu yerda qo‘shish mumkin
+        // 🔵 Фойда (ҳозирча умумий даромад деб олинган)
+        const foydalar = Object.keys(guruhlangan).map(oy => ({
+          month: parseInt(oy),
+          revenue: guruhlangan[oy],
+          profit: guruhlangan[oy],
         }));
 
-        setMonthlyProfits(profits);
+        setOyFoydalar(foydalar);
 
-        if (profits.length > 0) setSelectedMonth(profits[0].month);
+        if (foydalar.length > 0) setTanlanganOy(foydalar[0].month);
       } catch (err) {
-        setError('Maʼlumotlarni olishda xatolik yuz berdi.');
+        setXatolik("Маълумотларни олишда хатолик юз берди.");
         console.error(err);
       } finally {
-        setLoading(false);
+        setYuklanmoqda(false);
       }
     };
 
-    fetchOrders();
+    malumotlarniYuklash();
   }, []);
 
-  // Tanlangan oy uchun ma'lumotlarni yangilash
+  // 🟠 Танланган ой маълумотини янгилаш
   useEffect(() => {
-    if (selectedMonth === null) return;
-    const monthProfit = monthlyProfits.find(p => p.month === selectedMonth);
-    if (monthProfit) {
-      setCurrentMonthData({
-        revenue: monthProfit.revenue,
-        profit: monthProfit.profit,
+    if (tanlanganOy === null) return;
+    const oy = oylikFoydalar.find(p => p.month === tanlanganOy);
+    if (oy) {
+      setOyMalumoti({
+        daromad: oy.revenue,
+        foyda: oy.profit,
       });
     }
-  }, [selectedMonth, monthlyProfits]);
+  }, [tanlanganOy, oylikFoydalar]);
 
-  // Grafik uchun ma'lumot
-  const chartData = monthlyProfits.map(p => ({
+  // 📊 График учун маълумот
+  const grafikMalumot = oylikFoydalar.map(p => ({
     name: monthNames[p.month],
     foyda: p.profit,
   }));
 
-  if (loading) return <div className="finance-loading">Yuklanmoqda...</div>;
-  if (error) return <div className="finance-error">{error}</div>;
+  if (yuklanmoqda) return <div className="finance-loading">⏳ Юкланмоқда...</div>;
+  if (xatolik) return <div className="finance-error">{xatolik}</div>;
 
   return (
     <div className="finance-container">
-      <h2 className="finance-title">📊 Foyda Tahlili (Oylar bo‘yicha)</h2>
+      <h2 className="finance-title">📊 Фойда таҳлили (Ойлар бўйича)</h2>
 
       <div className="finance-filterWrapper">
-        <label htmlFor="month-select" className="finance-label">Oy tanlang:</label>
+        <label htmlFor="month-select" className="finance-label">Ой танланг:</label>
         <select
           id="month-select"
-          value={selectedMonth ?? ''}
-          onChange={e => setSelectedMonth(parseInt(e.target.value))}
+          value={tanlanganOy ?? ''}
+          onChange={e => setTanlanganOy(parseInt(e.target.value))}
           className="finance-select"
         >
-          {monthlyProfits.map(p => (
+          {oylikFoydalar.map(p => (
             <option key={p.month} value={p.month}>
               {monthNames[p.month]}
             </option>
@@ -113,24 +114,24 @@ const Finance = () => {
 
       <div className="finance-cardsRow">
         <div className="finance-card finance-revenueCard">
-          <h3 className="finance-cardTitle">Jami Daromad</h3>
-          <p className="finance-cardValue">{currentMonthData.revenue.toLocaleString()} so‘m</p>
+          <h3 className="finance-cardTitle">Жами Даромад</h3>
+          <p className="finance-cardValue">{oyMalumoti.daromad.toLocaleString()} сўм</p>
         </div>
         <div className="finance-card finance-profitCard">
-          <h3 className="finance-cardTitle">Oylik Foyda</h3>
-          <p className={`finance-profitValue ${currentMonthData.profit >= 0 ? 'positive' : 'negative'}`}>
-            {currentMonthData.profit.toLocaleString()} so‘m
+          <h3 className="finance-cardTitle">Ойлик Фойда</h3>
+          <p className={`finance-profitValue ${oyMalumoti.foyda >= 0 ? 'positive' : 'negative'}`}>
+            {oyMalumoti.foyda.toLocaleString()} сўм
           </p>
         </div>
       </div>
 
       <div className="finance-chartWrapper">
-        <h3 className="finance-cardTitle">📈 Grafik: Foyda Oylar bo‘yicha</h3>
+        <h3 className="finance-cardTitle">📈 График: Фойда ойлар бўйича</h3>
         <div style={{ overflowX: 'auto' }}>
           <BarChart
             width={400}
             height={350}
-            data={chartData}
+            data={grafikMalumot}
             margin={{ top: 10, right: 20, bottom: 50, left: 10 }}
           >
             <CartesianGrid strokeDasharray="3 3" />

@@ -1,37 +1,83 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
 const Settings = () => {
+  const [newLogin, setNewLogin] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleUpdateCredentials = async () => {
+    if (!newLogin || !newPassword || !confirmPassword) {
+      return setMessage('⚠️ Илтимос, барча майдонларни тўлдиринг.');
+    }
+    if (newPassword !== confirmPassword) {
+      return setMessage('❌ Пароллар мос эмас.');
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+
+      const response = await axios.post(
+        'https://alikafecrm.uz/user',
+        {
+          login: newLogin,
+          password: newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setMessage('✅ Маълумотлар муваффақиятли ўзгартирилди!');
+        setNewLogin('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setMessage('❌ Маълумотларни ўзгартиришда хатолик юз берди.');
+      }
+    } catch (error) {
+      console.error('Xatolik:', error);
+      setMessage('🚫 Сервер билан боғланишда муаммо юз берди.');
+    }
+  };
+
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>⚙️ Sozlamalar</h2>
+      <h2 style={styles.title}>⚙️ Созламалар</h2>
 
       <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Profil Rasm</h3>
-        <input type="file" style={styles.inputFile} />
-      </div>
-
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Parolni Tasdiqlash</h3>
-        <div style={styles.passwordContainer}>
+        <h3 style={styles.cardTitle}>👤 Логин ва Паролни ўзгартириш</h3>
+        <div style={styles.form}>
           <input
-            type="password"
-            placeholder="Yangi parol"
+            type="text"
+            placeholder="Янги логин"
+            value={newLogin}
+            onChange={(e) => setNewLogin(e.target.value)}
             style={styles.input}
-            autoComplete="new-password"
           />
           <input
             type="password"
-            placeholder="Parolni tasdiqlang"
+            placeholder="Янги парол"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             style={styles.input}
-            autoComplete="new-password"
           />
+          <input
+            type="password"
+            placeholder="Паролни тасдиқланг"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            style={styles.input}
+          />
+          <button style={styles.button} onClick={handleUpdateCredentials}>
+            💾 Сақлаш
+          </button>
+          {message && <p style={styles.message}>{message}</p>}
         </div>
-      </div>
-
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Xavfsizlik</h3>
-        <button style={styles.saveButton}>Saqlash</button>
       </div>
     </div>
   );
@@ -40,12 +86,12 @@ const Settings = () => {
 const styles = {
   container: {
     padding: 30,
-    maxWidth: 700,
+    maxWidth: 600,
     margin: '40px auto',
     backgroundColor: '#f9fbfd',
     borderRadius: 20,
     boxShadow: '0 20px 40px rgba(30, 60, 114, 0.15)',
-    fontFamily: "'Poppins', sans-serif",
+    fontFamily: "'Segoe UI', sans-serif",
     color: '#222',
   },
   title: {
@@ -54,8 +100,6 @@ const styles = {
     fontSize: 28,
     fontWeight: 700,
     color: '#1e3c72',
-    letterSpacing: '1.2px',
-    textShadow: '0 3px 8px rgba(30, 60, 114, 0.3)',
   },
   card: {
     backgroundColor: '#ffffff',
@@ -63,8 +107,6 @@ const styles = {
     marginBottom: 30,
     borderRadius: 16,
     boxShadow: '0 8px 25px rgba(30, 60, 114, 0.1)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    cursor: 'default',
   },
   cardTitle: {
     fontSize: 20,
@@ -72,19 +114,7 @@ const styles = {
     marginBottom: 18,
     color: '#0b2645',
   },
-  inputFile: {
-    width: '100%',
-    padding: '14px 18px',
-    borderRadius: 10,
-    border: '2px solid #d0d7e6',
-    backgroundColor: '#f5f7fb',
-    fontSize: 16,
-    color: '#555',
-    cursor: 'pointer',
-    transition: 'border-color 0.3s ease',
-    outline: 'none',
-  },
-  passwordContainer: {
+  form: {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
@@ -97,28 +127,22 @@ const styles = {
     backgroundColor: '#f9fbfd',
     fontSize: 16,
     color: '#222',
-    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
-    outline: 'none',
   },
-  saveButton: {
-    width: '100%',
-    padding: 16,
+  button: {
+    padding: 14,
     backgroundColor: '#1e3c72',
     color: '#fff',
     border: 'none',
     borderRadius: 12,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     cursor: 'pointer',
-    boxShadow: '0 8px 20px rgba(30, 60, 114, 0.3)',
-    transition: 'background-color 0.3s ease, transform 0.2s ease',
+  },
+  message: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#d32f2f',
   },
 };
-
-// Adding hover/focus styles dynamically for inputs and button
-// Since inline styles do not support :hover/:focus, you might want to handle it via JS or use a CSS-in-JS library
-// But here is a simple example with onFocus and onBlur for inputs and onMouseEnter/onMouseLeave for button:
-
-// You can add that logic later if you want interaction.
 
 export default Settings;

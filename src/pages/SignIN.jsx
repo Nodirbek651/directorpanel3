@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -19,7 +18,7 @@ const SignIN = () => {
         const response = await axios.get("https://alikafecrm.uz/user");
         setUsers(response.data);
       } catch (err) {
-        console.error("Xatolik:", err);
+        console.error("Хатолик:", err);
         setError(true);
       }
     };
@@ -29,11 +28,11 @@ const SignIN = () => {
   const handleSignIn = (e) => {
     e.preventDefault();
     const foundUser = users.find(user =>
-      user.username === username &&
-      user.password === password &&
+      user.username === username.trim() &&
+      user.password === password.trim() &&
       user.role === "BIGADMIN"
     );
-
+  
     if (foundUser) {
       localStorage.setItem('authToken', 'dummy-token');
       localStorage.setItem('director', 'true');
@@ -43,6 +42,7 @@ const SignIN = () => {
       setTimeout(() => setError(false), 3000);
     }
   };
+  
 
   return (
     <div className="body-wrapper">
@@ -50,15 +50,15 @@ const SignIN = () => {
       <div className="bg-gradient"></div>
 
       <div className="container">
-        <h2 className="title">Kirish</h2>
-        {error && <div className="error">Login yoki parol noto‘g‘ri yoki ruxsat yo‘q</div>}
+        <h2 className="title">Кириш</h2>
+        {error && <div className="error">Логин ёки парол нотўғри ёки рухсат йўқ</div>}
 
         <form onSubmit={handleSignIn}>
           <div className="input-group">
             <FontAwesomeIcon icon={faUser} className="icon" />
             <input
               type="text"
-              placeholder="Foydalanuvchi nomi"
+              placeholder="Фойдаланувчи номи"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -68,7 +68,7 @@ const SignIN = () => {
             <FontAwesomeIcon icon={faLock} className="icon" />
             <input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Parol"
+              placeholder="Парол"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -79,7 +79,7 @@ const SignIN = () => {
             />
           </div>
 
-          <button type="submit" className="btn">Kirish</button>
+          <button type="submit" className="btn">Кириш</button>
         </form>
       </div>
 

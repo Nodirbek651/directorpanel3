@@ -4,15 +4,15 @@ import axios from 'axios';
 const translateRole = (role) => {
   switch (role) {
     case 'CASHIER':
-      return 'Ofitsiant';
+      return 'Официант';
     case 'KITCHEN':
-      return 'Povar';
+      return 'Повар';
     case 'CUSTOMER':
-      return 'Admin';
+      return 'Админ';
     case 'BIGADMIN':
-      return 'Direktor';
+      return 'Директор';
     default:
-      return 'Nomaʼlum';
+      return 'Номаълум';
   }
 };
 
@@ -28,8 +28,8 @@ const Employees = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error("Xatolik:", err);
-        setError("Ma'lumotni yuklashda xatolik yuz berdi.");
+        console.error("Хатолик:", err);
+        setError("Маълумотни юклашда хатолик юз берди.");
         setLoading(false);
       });
   }, []);
@@ -41,7 +41,7 @@ const Employees = () => {
       fontSize: 18,
       color: '#555',
       fontFamily: "'Poppins', sans-serif",
-    }}>⏳ Yuklanmoqda...</p>
+    }}>⏳ Юкланмоқда...</p>
   );
 
   if (error) return (
@@ -72,7 +72,7 @@ const Employees = () => {
         textAlign: 'center',
         textShadow: '0 2px 5px rgba(30, 60, 114, 0.3)'
       }}>
-        📋 Xodimlar Ro'yxati
+        📋 Ходимлар рўйхати
       </h2>
 
       <div style={{
@@ -106,18 +106,18 @@ const Employees = () => {
                 padding: '16px 24px',
                 borderBottom: '3px solid #144270',
                 textAlign: 'left',
-              }}>Ism</th>
+              }}>Исм</th>
               <th style={{
                 padding: '16px 24px',
                 borderBottom: '3px solid #144270',
                 textAlign: 'left',
-              }}>Lavozimi</th>
+              }}>Лавозими</th>
               <th style={{
                 padding: '16px 24px',
                 borderBottom: '3px solid #144270',
                 borderTopRightRadius: 16,
                 textAlign: 'left',
-              }}>Telefon raqami</th>
+              }}>Телефон рақами</th>
             </tr>
           </thead>
           <tbody>

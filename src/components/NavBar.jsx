@@ -24,7 +24,7 @@ const Navbar = ({ toggleSidebar }) => {
         userSelect: 'none',
       }}
     >
-      {/* Left part: hamburger + logo */}
+      {/* Chap tomon: hamburger + logo */}
       <div
         style={{
           display: 'flex',
@@ -83,11 +83,11 @@ const Navbar = ({ toggleSidebar }) => {
             userSelect: 'none',
           }}
         >
-          {/* LOGO nomi kiriting */}
+          {/* ЛОГО номи киритинг */}
         </h1>
       </div>
 
-      {/* Logout tugmasi */}
+      {/* Чиқиш тугмаси */}
       <button
         onClick={goToLogoutPage}
         style={{
@@ -111,9 +111,9 @@ const Navbar = ({ toggleSidebar }) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 4px 14px rgba(255, 126, 95, 0.7)';
         }}
-        aria-label="Logout"
+        aria-label="Чиқиш"
       >
-        Chiqish
+        Чиқиш
       </button>
     </header>
   );

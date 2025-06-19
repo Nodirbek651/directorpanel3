@@ -24,7 +24,6 @@ const Navbar = ({ toggleSidebar }) => {
         userSelect: 'none',
       }}
     >
-      {/* Chap tomon: hamburger + logo */}
       <div
         style={{
           display: 'flex',
@@ -83,11 +82,10 @@ const Navbar = ({ toggleSidebar }) => {
             userSelect: 'none',
           }}
         >
-          {/* ЛОГО номи киритинг */}
+          Otabek cafe
         </h1>
       </div>
 
-      {/* Чиқиш тугмаси */}
       <button
         onClick={goToLogoutPage}
         style={{

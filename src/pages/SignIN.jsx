@@ -4,7 +4,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
-const SignIN = () => {
+const SignIn = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,10 +15,10 @@ const SignIN = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://alikafecrm.uz/user");
+        const response = await axios.get('https://alikafecrm.uz/user');
         setUsers(response.data);
       } catch (err) {
-        console.error("Хатолик:", err);
+        console.error('Хатолик:', err);
         setError(true);
       }
     };
@@ -27,22 +27,22 @@ const SignIN = () => {
 
   const handleSignIn = (e) => {
     e.preventDefault();
-    const foundUser = users.find(user =>
-      user.username === username.trim() &&
-      user.password === password.trim() &&
-      user.role === "BIGADMIN"
+    const foundUser = users.find(
+      (user) =>
+        user.username === username.trim() &&
+        user.password === password.trim() &&
+        user.role === 'BIGADMIN'
     );
-  
+
     if (foundUser) {
-      localStorage.setItem('authToken', 'dummy-token');
       localStorage.setItem('director', 'true');
+      localStorage.setItem('userRole', 'BIGADMIN');
       navigate('/dashboard');
     } else {
       setError(true);
       setTimeout(() => setError(false), 3000);
     }
   };
-  
 
   return (
     <div className="body-wrapper">
@@ -240,4 +240,4 @@ const SignIN = () => {
   );
 };
 
-export default SignIN;
+export default SignIn;

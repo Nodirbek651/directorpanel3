@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [percent, setPercent] = useState(0.05);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showHistory, setShowHistory] = useState(() => {
     return localStorage.getItem('showHistory') === 'true';
   });
@@ -12,36 +14,43 @@ const Orders = () => {
     return today;
   });
 
-  const fetchOrders = () => {
-    axios.get('https://alikafecrm.uz/order')
-      .then(response => {
-        const updatedOrders = response.data.map(order => {
-          // totalPrice ni qayta hisoblaymiz
-          const calculatedTotal = order.orderItems?.reduce((acc, item) => {
-            return acc + (item.product?.price || 0) * item.count;
-          }, 0);
-  
-          return {
-            ...order,
-            totalPrice: calculatedTotal // yangilangan narx
-          };
-        });
-  
-        setOrders(updatedOrders);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Buyurtmalarni olishda xatolik:', error);
-        setLoading(false);
-      });
+  const fetchPercent = async () => {
+    try {
+      const res = await axios.get('https://alikafecrm.uz/percent');
+      if (res.data && res.data.percent) {
+        setPercent(res.data.percent / 100);
+      }
+    } catch (error) {
+      console.error('Foizni olishda xatolik:', error);
+      setError('Фоизни олишда хатолик юз берди.');
+    }
   };
-  
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get('https://alikafecrm.uz/order');
+      const updatedOrders = response.data.map(order => {
+        const calculatedTotal = order.orderItems?.reduce((acc, item) => {
+          return acc + (item.product?.price || 0) * item.count;
+        }, 0);
+        return {
+          ...order,
+          totalPrice: calculatedTotal || 0
+        };
+      });
+      setOrders(updatedOrders);
+      setLoading(false);
+    } catch (error) {
+      console.error('Buyurtmalarni olishda xatolik:', error);
+      setError('Буюртмаларни олишда хатолик юз берди.');
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
+    fetchPercent();
     fetchOrders();
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 1000);
+    const interval = setInterval(fetchOrders, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,9 +72,11 @@ const Orders = () => {
   const isSameDate = (date1, date2) => {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
   };
 
   const getStatusBadge = (status) => {
@@ -79,22 +90,42 @@ const Orders = () => {
       textAlign: 'center',
     };
     switch (status?.toLowerCase()) {
-      case "pending":
+      case 'pending':
         return <span style={{ ...commonStyle, backgroundColor: 'red' }}>Янги буюртма</span>;
-      case "cooking":
+      case 'cooking':
         return <span style={{ ...commonStyle, backgroundColor: 'orange' }}>Тайёрланмоқда</span>;
-      case "ready":
+      case 'ready':
         return <span style={{ ...commonStyle, backgroundColor: 'green' }}>Буюртма тайёр</span>;
-      case "cancelled":
+      case 'cancelled':
         return <span style={{ ...commonStyle, backgroundColor: '#555' }}>Бекор қилинди</span>;
-      case "completed":
+      case 'completed':
         return <span style={{ ...commonStyle, backgroundColor: '#228B22' }}>Мижоз олдида</span>;
-      case "archive":
+      case 'archive':
         return <span style={{ ...commonStyle, backgroundColor: 'blue' }}>Тугалланган</span>;
       default:
         return <span style={{ ...commonStyle, backgroundColor: 'gray' }}>Номаълум</span>;
     }
-    
+  };
+
+  const getTableStatusBadge = (status) => {
+    const style = {
+      padding: '5px 10px',
+      borderRadius: '6px',
+      fontWeight: 'bold',
+      color: '#fff',
+      display: 'inline-block',
+      fontSize: '13px',
+    };
+    switch (status?.toLowerCase()) {
+      case 'busy':
+        return <span style={{ ...style, backgroundColor: '#e53935' }}>Банд</span>;
+      case 'free':
+        return <span style={{ ...style, backgroundColor: '#43a047' }}>Бўш</span>;
+      case 'reserved':
+        return <span style={{ ...style, backgroundColor: '#fb8c00' }}>Брон қилинган</span>;
+      default:
+        return <span style={{ ...style, backgroundColor: '#757575' }}>Номаълум</span>;
+    }
   };
 
   const filteredOrders = orders.filter(order => {
@@ -106,13 +137,16 @@ const Orders = () => {
   });
 
   if (loading) {
-    return <div style={styles.loading}>Yuklanmoqda...</div>;
+    return <div style={styles.loading}>⏳ Юкланмоқда...</div>;
+  }
+
+  if (error) {
+    return <div style={styles.error}>{error}</div>;
   }
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>буюртмалар</h2>
-
+      <h2 style={styles.heading}>📋 Буюртмалар</h2>
       <div style={styles.buttonGroup}>
         <button
           style={{
@@ -122,7 +156,7 @@ const Orders = () => {
           }}
           onClick={() => handleToggle(false)}
         >
-          хозирги буюртмалар
+          Хозирги буюртмалар
         </button>
         <button
           style={{
@@ -132,13 +166,12 @@ const Orders = () => {
           }}
           onClick={() => handleToggle(true)}
         >
-          буюртма тарихи
+          Буюртма тарихи
         </button>
       </div>
-
       <div style={styles.dateFilterContainer}>
         <label htmlFor="dateFilter" style={styles.dateLabel}>
-        Санани танланг:
+          Санани танланг:
         </label>
         <input
           id="dateFilter"
@@ -148,37 +181,43 @@ const Orders = () => {
           style={styles.dateInput}
         />
       </div>
-
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
             <tr>
-            <th style={styles.th}>№</th>
-<th style={styles.th}>Стол рақами</th>
-<th style={styles.th}>Маҳсулотлар</th>
-<th style={styles.th}>Жами нарх</th>
-<th style={styles.th}>Хизмат ҳақи</th>
-<th style={styles.th}>Умумий тўлов</th>
-<th style={styles.th}>Вақт</th>
-<th style={styles.th}>Ҳолати</th>
-
+              <th style={styles.th}>№</th>
+              <th style={styles.th}>Стол номи</th>
+              <th style={styles.th}>Стол рақами</th>
+              <th style={styles.th}>Маҳсулотлар</th>
+              <th style={styles.th}>Жами нарх</th>
+              <th style={styles.th}>Хизмат ҳақи ({(percent * 100).toFixed(1)}%)</th>
+              <th style={styles.th}>Умумий тўлов</th>
+              <th style={styles.th}>Вақт</th>
+              <th style={styles.th}>Стол ҳолати</th>
+              <th style={styles.th}>Ҳолати</th>
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order, index) => (
-              <tr key={order._id || index}>
-                <td style={styles.td}>{index + 1}</td>
-                <td style={styles.td}>{order.table?.number || 'Nomaʼlum'}</td>
-                <td style={styles.td}>
-                  {order.orderItems?.map(item => `${item.product.name} (${item.count})`).join(', ')}
-                </td>
-                <td style={styles.td}>{order.totalPrice} so'm</td>
-                <td style={styles.td}>{Math.round(order.totalPrice * 0.04)} so'm</td>
-                <td style={styles.td}>{Math.round(order.totalPrice * 1.04)} so'm</td>
-                <td style={styles.timeTd}>{formatDateTime(order.createdAt)}</td>
-                <td style={styles.td}>{getStatusBadge(order.status)}</td>
-              </tr>
-            ))}
+            {filteredOrders.map((order, index) => {
+              const serviceFee = Math.round(order.totalPrice * percent);
+              const grandTotal = order.totalPrice + serviceFee;
+              return (
+                <tr key={order._id || index}>
+                  <td style={styles.td}>{index + 1}</td>
+                  <td style={styles.td}>{order.table?.name || 'Номаълум'}</td>
+                  <td style={styles.td}>{order.table?.number || '—'}</td>
+                  <td style={styles.td}>
+                    {order.orderItems?.map(item => `${item.product?.name || 'Номаълум'} (${item.count})`).join(', ')}
+                  </td>
+                  <td style={styles.td}>{order.totalPrice.toLocaleString()} сўм</td>
+                  <td style={styles.td}>{serviceFee.toLocaleString()} сўм</td>
+                  <td style={styles.td}>{grandTotal.toLocaleString()} сўм</td>
+                  <td style={styles.timeTd}>{formatDateTime(order.createdAt)}</td>
+                  <td style={styles.td}>{getTableStatusBadge(order.table?.status)}</td>
+                  <td style={styles.td}>{getStatusBadge(order.status)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -206,6 +245,12 @@ const styles = {
     fontSize: '20px',
     color: '#555',
   },
+  error: {
+    textAlign: 'center',
+    marginTop: '50px',
+    fontSize: '20px',
+    color: '#d32f2f',
+  },
   buttonGroup: {
     marginBottom: '16px',
     display: 'flex',
@@ -219,7 +264,6 @@ const styles = {
     fontWeight: '600',
     border: '1px solid #ccc',
     borderRadius: '8px',
-    backgroundColor: '#eaeaea',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
   },

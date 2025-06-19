@@ -1,27 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Chiqish = () => {
+const Logout = () => {
   const navigate = useNavigate();
 
-  const chiqishniBajarish = () => {
-    const tasdiq = window.confirm("Ростдан ҳам чиқмоқчимисиз?");
-    if (tasdiq) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('user');
-      navigate('/login');
-    } else {
-      navigate(-1); // Олдинги саҳифага қайтиш
-      navigate('/login'); // Кейин логин саҳифасига ўтиш (ихтиёрий)
-    }
-  };
-
-  React.useEffect(() => {
-    chiqishniBajarish();
-  }, []);
+  useEffect(() => {
+    const handleLogout = () => {
+      const tasdiq = window.confirm('Ростдан ҳам чиқмоқчимисиз?');
+      if (tasdiq) {
+        localStorage.removeItem('director');
+        localStorage.removeItem('userRole');
+        navigate('/login');
+      } else {
+        navigate(-1);
+      }
+    };
+    handleLogout();
+  }, [navigate]);
 
   return null;
 };
 
-export default Chiqish;
+export default Logout;

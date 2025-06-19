@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const translateRole = (role) => {
@@ -28,8 +28,8 @@ const Employees = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error("Хатолик:", err);
-        setError("Маълумотни юклашда хатолик юз берди.");
+        console.error('Хатолик:', err);
+        setError('Маълумотни юклашда хатолик юз берди.');
         setLoading(false);
       });
   }, []);
@@ -49,7 +49,7 @@ const Employees = () => {
       padding: 30,
       textAlign: 'center',
       fontSize: 18,
-      color: 'red',
+      color: '#d32f2f',
       fontFamily: "'Poppins', sans-serif",
     }}>{error}</p>
   );
@@ -93,8 +93,6 @@ const Employees = () => {
               color: '#fff',
               fontWeight: 600,
               userSelect: 'none',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
             }}>
               <th style={{
                 padding: '16px 24px',
@@ -145,7 +143,7 @@ const Employees = () => {
                   fontSize: 16,
                   fontWeight: '500',
                   whiteSpace: 'nowrap',
-                }}>{employee.name}</td>
+                }}>{employee.name || 'Номаълум'}</td>
                 <td style={{
                   padding: '14px 24px',
                   color: '#555',

@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './Finance.css';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
 
-// Ой номлари
 const monthNames = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентабрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  'Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн',
+  'Июл', 'Август', 'Сентабр', 'Октябр', 'Ноябр', 'Декабр'
 ];
 
 const Finance = () => {
@@ -21,88 +14,86 @@ const Finance = () => {
   const [oylikFoydalar, setOyFoydalar] = useState([]);
   const [tanlanganOy, setTanlanganOy] = useState(null);
   const [oyMalumoti, setOyMalumoti] = useState({ daromad: 0, foyda: 0 });
+  const [foiz, setFoiz] = useState(() => {
+    const saqlangan = localStorage.getItem('foiz');
+    return saqlangan ? parseFloat(saqlangan) : 0.05;
+  });
+  const [foizInput, setFoizInput] = useState(() => {
+    const saqlangan = localStorage.getItem('foiz');
+    return saqlangan ? parseFloat(saqlangan) * 100 : 5;
+  });
   const [yuklanmoqda, setYuklanmoqda] = useState(true);
   const [xatolik, setXatolik] = useState(null);
 
-  // 🟡 Маълумотларни олиш ва ойлар бўйича гуруҳлаш
   useEffect(() => {
-    const malumotlarniYuklash = async () => {
-      setYuklanmoqda(true);
-      setXatolik(null);
+    const yuklash = async () => {
       try {
-        const javob = await axios.get('https://alikafecrm.uz/order');
-
-        // Хар бир буюртма учун умумий нархни ҳисоблаш
-        const yangilanganBuyurtmalar = javob.data.map(buyurtma => {
-          const jami = buyurtma.orderItems?.reduce((acc, item) => {
-            return acc + (item.product?.price || 0) * item.count;
-          }, 0);
-          return { ...buyurtma, totalPrice: jami || 0 };
+        const res = await axios.get('https://alikafecrm.uz/order');
+        const yangilangan = res.data.map(b => {
+          const jami = b.orderItems?.reduce((sum, i) => sum + (i.product?.price || 0) * i.count, 0);
+          return { ...b, totalPrice: jami || 0 };
         });
-
-        setBuyurtmalar(yangilanganBuyurtmalar);
-
-        // 🟢 Ойлар бўйича даромадни гуруҳлаш
-        const guruhlangan = {};
-        yangilanganBuyurtmalar.forEach(buyurtma => {
-          const oy = new Date(buyurtma.createdAt).getMonth();
-          if (!guruhlangan[oy]) guruhlangan[oy] = 0;
-          guruhlangan[oy] += buyurtma.totalPrice;
-        });
-
-        // 🔵 Фойда (ҳозирча умумий даромад деб олинган)
-        const foydalar = Object.keys(guruhlangan).map(oy => ({
-          month: parseInt(oy),
-          revenue: guruhlangan[oy],
-          profit: guruhlangan[oy],
-        }));
-
-        setOyFoydalar(foydalar);
-
-        if (foydalar.length > 0) setTanlanganOy(foydalar[0].month);
+        setBuyurtmalar(yangilangan);
       } catch (err) {
-        setXatolik("Маълумотларни олишда хатолик юз берди.");
+        setXatolik('Маълумотларни юклашда хатолик юз берди.');
         console.error(err);
       } finally {
         setYuklanmoqda(false);
       }
     };
-
-    malumotlarniYuklash();
+    yuklash();
   }, []);
 
-  // 🟠 Танланган ой маълумотини янгилаш
+  useEffect(() => {
+    const guruhlangan = {};
+    buyurtmalar.forEach(b => {
+      const oy = new Date(b.createdAt).getMonth();
+      guruhlangan[oy] = (guruhlangan[oy] || 0) + b.totalPrice;
+    });
+
+    const foydalar = Object.keys(guruhlangan).map(oy => ({
+      month: parseInt(oy),
+      revenue: guruhlangan[oy],
+      profit: guruhlangan[oy] * foiz
+    }));
+
+    setOyFoydalar(foydalar);
+    if (foydalar.length > 0) setTanlanganOy(foydalar[0].month);
+  }, [buyurtmalar, foiz]);
+
   useEffect(() => {
     if (tanlanganOy === null) return;
-    const oy = oylikFoydalar.find(p => p.month === tanlanganOy);
-    if (oy) {
-      setOyMalumoti({
-        daromad: oy.revenue,
-        foyda: oy.profit,
-      });
-    }
+    const o = oylikFoydalar.find(p => p.month === tanlanganOy);
+    if (o) setOyMalumoti({ daromad: o.revenue, foyda: o.profit });
   }, [tanlanganOy, oylikFoydalar]);
 
-  // 📊 График учун маълумот
-  const grafikMalumot = oylikFoydalar.map(p => ({
+  const chartData = oylikFoydalar.map(p => ({
     name: monthNames[p.month],
-    foyda: p.profit,
+    foyda: p.profit
   }));
 
-  if (yuklanmoqda) return <div className="finance-loading">⏳ Юкланмоқда...</div>;
-  if (xatolik) return <div className="finance-error">{xatolik}</div>;
+  const handleHisoblash = () => {
+    const qiymat = parseFloat(foizInput);
+    if (!isNaN(qiymat) && qiymat >= 0) {
+      const realFoiz = qiymat / 100;
+      setFoiz(realFoiz);
+      localStorage.setItem('foiz', realFoiz);
+    }
+  };
+
+  if (yuklanmoqda) return <div style={styles.loading}>⏳ Юкланмоқда...</div>;
+  if (xatolik) return <div style={styles.error}>{xatolik}</div>;
 
   return (
-    <div className="finance-container">
-      <h2 className="finance-title">📊 Фойда таҳлили (Ойлар бўйича)</h2>
+    <div style={styles.financeContainer}>
+      <h2 style={styles.financeTitle}>📊 Фойда таҳлили (Ойлар бўйича)</h2>
 
-      <div className="finance-filterWrapper">
-        <label htmlFor="month-select" className="finance-label">Ой танланг:</label>
+      <div style={styles.financeFilterWrapper}>
+        <label style={styles.financeLabel}>Ой танланг:</label>
         <select
-          id="month-select"
           value={tanlanganOy ?? ''}
           onChange={e => setTanlanganOy(parseInt(e.target.value))}
-          className="finance-select"
+          style={styles.financeSelect}
         >
           {oylikFoydalar.map(p => (
             <option key={p.month} value={p.month}>
@@ -110,28 +101,47 @@ const Finance = () => {
             </option>
           ))}
         </select>
+
+        <label style={styles.financeLabel}>Фойда фоизи:</label>
+        <input
+          type="number"
+          step="1"
+          value={foizInput}
+          onChange={e => setFoizInput(e.target.value)}
+          style={styles.financeInput}
+        />
+        <button onClick={handleHisoblash} style={styles.financeButton}>
+          Ҳисоблаш
+        </button>
       </div>
 
-      <div className="finance-cardsRow">
-        <div className="finance-card finance-revenueCard">
-          <h3 className="finance-cardTitle">Жами Даромад</h3>
-          <p className="finance-cardValue">{oyMalumoti.daromad.toLocaleString()} сўм</p>
+      <div style={styles.financeCardsRow}>
+        <div style={styles.financeCard}>
+          <h3 style={styles.financeCardTitle}>Жами Даромад</h3>
+          <p style={styles.financeCardValue}>
+            {oyMalumoti.daromad.toLocaleString()} сўм
+          </p>
         </div>
-        <div className="finance-card finance-profitCard">
-          <h3 className="finance-cardTitle">Ойлик Фойда</h3>
-          <p className={`finance-profitValue ${oyMalumoti.foyda >= 0 ? 'positive' : 'negative'}`}>
-            {oyMalumoti.foyda.toLocaleString()} сўм
+        <div style={{ ...styles.financeCard, ...styles.financeProfitCard }}>
+          <h3 style={styles.financeCardTitle}>Ойлик Фойда ({foizInput}%)</h3>
+          <p
+            style={{
+              ...styles.financeProfitValue,
+              color: oyMalumoti.foyda >= 0 ? '#4caf50' : '#ef4444',
+            }}
+          >
+            {oyMalumoti.foyda.toLocaleString(undefined, { maximumFractionDigits: 0 })} сўм
           </p>
         </div>
       </div>
 
-      <div className="finance-chartWrapper">
-        <h3 className="finance-cardTitle">📈 График: Фойда ойлар бўйича</h3>
+      <div style={styles.financeChartWrapper}>
+        <h3 style={styles.financeCardTitle}>📈 График: Фойда ойлар бўйича</h3>
         <div style={{ overflowX: 'auto' }}>
           <BarChart
             width={400}
             height={350}
-            data={grafikMalumot}
+            data={chartData}
             margin={{ top: 10, right: 20, bottom: 50, left: 10 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
@@ -144,6 +154,114 @@ const Finance = () => {
       </div>
     </div>
   );
+};
+
+const styles = {
+  financeContainer: {
+    padding: '24px',
+    fontFamily: 'Segoe UI, sans-serif',
+    backgroundColor: '#f4f6f8',
+    minHeight: '100vh',
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  financeTitle: {
+    fontSize: '28px',
+    fontWeight: 'bold',
+    marginBottom: '20px',
+    color: '#333',
+    textAlign: 'center',
+  },
+  financeFilterWrapper: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    justifyContent: 'center',
+    marginBottom: '20px',
+  },
+  financeLabel: {
+    fontWeight: '600',
+    fontSize: '16px',
+    color: '#333',
+    alignSelf: 'center',
+  },
+  financeSelect: {
+    padding: '10px',
+    fontSize: '16px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    minWidth: '150px',
+  },
+  financeInput: {
+    padding: '10px',
+    fontSize: '16px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    width: '100px',
+  },
+  financeButton: {
+    padding: '10px 20px',
+    fontSize: '16px',
+    fontWeight: '600',
+    backgroundColor: '#1e3c72',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
+  },
+  financeCardsRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '20px',
+    justifyContent: 'center',
+    marginBottom: '20px',
+  },
+  financeCard: {
+    backgroundColor: '#e3f2fd',
+    padding: '16px',
+    borderRadius: '10px',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+    flex: '1',
+    minWidth: '200px',
+    textAlign: 'center',
+  },
+  financeProfitCard: {
+    backgroundColor: '#e8f5e9',
+  },
+  financeCardTitle: {
+    fontSize: '20px',
+    marginBottom: '8px',
+    color: '#1565c0',
+  },
+  financeCardValue: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: '#0d47a1',
+  },
+  financeProfitValue: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+  },
+  financeChartWrapper: {
+    backgroundColor: '#fff',
+    padding: '16px',
+    borderRadius: '10px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    textAlign: 'center',
+  },
+  loading: {
+    textAlign: 'center',
+    marginTop: '50px',
+    fontSize: '20px',
+    color: '#555',
+  },
+  error: {
+    textAlign: 'center',
+    marginTop: '50px',
+    fontSize: '20px',
+    color: '#d32f2f',
+  },
 };
 
 export default Finance;

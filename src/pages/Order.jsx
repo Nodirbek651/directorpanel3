@@ -17,7 +17,7 @@ const Orders = () => {
   useEffect(() => {
     fetchPercent();
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000);
+    const interval = setInterval(fetchOrders, 1000);
     const resizeListener = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', resizeListener);
     return () => {

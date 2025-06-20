@@ -225,7 +225,7 @@ const Orders = () => {
 
 const styles = {
   container: { padding: '24px', backgroundColor: '#f4f6f8', minHeight: '100vh', fontFamily: 'sans-serif' },
-  heading: { fontSize: '28px', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' },
+  heading: { fontSize: '28px', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px', color: 'black'},
   sectionTitle: { fontSize: '20px', fontWeight: 'bold', margin: '20px 0 10px' },
   buttonGroup: { textAlign: 'center', flexWrap: 'wrap', justifyContent: 'center', gap: '10px', marginBottom: '16px' },
   toggleButton: { padding: '10px 20px', fontWeight: 'bold', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer', color: 'black', textAlign: 'center', boxSizing: 'border-box', minWidth: '140px' },

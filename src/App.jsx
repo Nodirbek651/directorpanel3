@@ -4,7 +4,6 @@ import Navbar from './components/NavBar';
 import Sidebar from "./components/Sidebar";
 import WeeklyMonthlyStats from './pages/WeeklyMonthlyStats';
 import Orders from './pages/Order';
-import Finance from './pages/Finance';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import Logout from './pages/Logout';
@@ -48,7 +47,6 @@ const AppContent = () => {
             <Route path="/" element={<PrivateRoute><WeeklyMonthlyStats /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><WeeklyMonthlyStats /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
-            <Route path="/finance" element={<PrivateRoute><Finance /></PrivateRoute>} />
             <Route path="/employees" element={<PrivateRoute><Employees /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
             <Route path="/logout" element={<PrivateRoute><Logout /></PrivateRoute>} />

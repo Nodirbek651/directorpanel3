@@ -16,7 +16,6 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
   const links = [
     { to: "/dashboard", label: "Бош саҳифа", icon: <FaHome /> },
     { to: "/orders", label: "Буюртмалар", icon: <FaClipboardList /> },
-    { to: "/finance", label: "Молиявий ҳисоботлар", icon: <FaChartLine /> },
     { to: "/employees", label: "Ходимлар", icon: <FaUsers /> },
     { to: "/settings", label: "Созламалар", icon: <FaCog /> },
     { to: "/logout", label: "Чиқиш", icon: <FaSignOutAlt /> },

@@ -3,7 +3,6 @@ import axios from 'axios';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-  const [percent, setPercent] = useState(0.1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showHistory, setShowHistory] = useState(() => localStorage.getItem('showHistory') === 'true');
@@ -14,7 +13,6 @@ const Orders = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
-    fetchPercent();
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000); // Poll every 10 seconds
     const resizeListener = () => setWindowWidth(window.innerWidth);
@@ -25,41 +23,36 @@ const Orders = () => {
     };
   }, []);
 
-  const fetchPercent = async () => {
-    try {
-      const res = await axios.get('https://alikafecrm.uz/percent');
-      console.log('Fetched percent:', res.data); // Debug: Inspect percent data
-      if (res.data?.percent) setPercent(res.data.percent / 100);
-    } catch {
-      setError('Фоизни олишда хатолик.');
-    }
-  };
-
   const fetchOrders = async () => {
     try {
       const res = await axios.get('https://alikafecrm.uz/order');
-      console.log('Fetched orders:', res.data); // Debug: Inspect raw data
+      console.log('Fetched orders:', res.data);
       const updated = res.data.map(order => {
-        const total = order.orderItems?.reduce((acc, item) => acc + (item.product?.price || 0) * item.count, 0);
-        return { ...order, totalPrice: total || 0 };
+        const total = order.orderItems?.reduce(
+          (acc, item) => acc + ((item.product?.price || 0) * (item.count || 0)),
+          0
+        ) || 0;
+        // Dastavka bo'lmaganlar uchun default 10%, dastavka uchun 0
+        const usluga = order.carrierNumber ? 0 : Math.round(total * 0.1);
+        return { ...order, totalPrice: total, usluga };
       });
       setOrders(updated);
       setLoading(false);
-    } catch {
-      setError('Буюртмаларни олишда хатолик.');
+    } catch (err) {
+      setError('Буюртмаларни олишда хатолик: ' + err.message);
       setLoading(false);
     }
   };
 
   const isSameDate = (date1, date2) => {
     if (!date1 || !date2) {
-      console.log('Invalid date detected:', { date1, date2 }); // Debug: Log invalid dates
+      console.log('Invalid date detected:', { date1, date2 });
       return false;
     }
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     if (isNaN(d1) || isNaN(d2)) {
-      console.log('Invalid date format:', { date1, date2 }); // Debug: Log invalid date formats
+      console.log('Invalid date format:', { date1, date2 });
       return false;
     }
     return (
@@ -125,13 +118,12 @@ const Orders = () => {
 
   const filteredOrders = (filterFn) => {
     const filtered = orders.filter(filterFn);
-    console.log('Filtered orders:', filtered); // Debug: Log filtered orders
+    console.log('Filtered orders:', filtered);
     return filtered;
   };
 
   const renderOrderRow = (order, index) => {
-    const serviceFee = Math.round(order.totalPrice * percent);
-    const total = order.totalPrice + serviceFee;
+    const total = (order.totalPrice || 0) + (order.usluga || 0);
     const productGrid = {
       display: 'grid',
       gridTemplateColumns:
@@ -140,20 +132,24 @@ const Orders = () => {
     };
 
     return (
-      <tr key={order._id}>
+      <tr key={order._id || index}>
         <td style={styles.td}>{index + 1}</td>
         <td style={styles.td}>{order.carrierNumber ? `📞 ${order.carrierNumber}` : order.table?.number || '—'}</td>
         <td style={{ ...styles.td, padding: '10px 4px' }}>
           <div style={productGrid}>
-            {order.orderItems?.map((i, idx) => (
-              <div key={idx} style={styles.productItem}>
-                {i.product?.name || 'Номаълум'} ({i.count})
-              </div>
-            ))}
+            {order.orderItems?.length > 0 ? (
+              order.orderItems.map((item, idx) => (
+                <div key={idx} style={styles.productItem}>
+                  {item.product?.name || 'Номаълум'} ({item.count || 0})
+                </div>
+              ))
+            ) : (
+              <div style={styles.productItem}>Маҳсулотлар йўқ</div>
+            )}
           </div>
         </td>
-        <td style={styles.td}>{order.totalPrice.toLocaleString()} сўм</td>
-        <td style={styles.td}>{serviceFee.toLocaleString()} сўм</td>
+        <td style={styles.td}>{(order.totalPrice || 0).toLocaleString()} сўм</td>
+        <td style={styles.td}>{(order.usluga || 0).toLocaleString()} сўм</td>
         <td style={styles.td}>{total.toLocaleString()} сўм</td>
         <td style={styles.td}>{formatDateTime(order.createdAt)}</td>
         <td style={styles.td}>
@@ -212,37 +208,81 @@ const Orders = () => {
       {error && <p style={{ textAlign: 'center', color: 'red' }}>{error}</p>}
       <h2 style={styles.heading}>📋 Буюртмалар</h2>
       <div style={styles.buttonGroup}>
-        <button onClick={() => handleToggle(false)} style={{ ...styles.toggleButton, backgroundColor: !showHistory && !showOnlyDelivery && !showDeliveryHistory ? '#007bff' : '#e0e0e0' }}>Хозирги</button>
-        <button onClick={() => handleToggle(true)} style={{ ...styles.toggleButton, backgroundColor: showHistory ? '#007bff' : '#e0e0e0' }}>Тарих</button>
-        <button onClick={handleShowDeliveryOnly} style={{ ...styles.toggleButton, backgroundColor: showOnlyDelivery ? '#007bff' : '#e0e0e0' }}>Даставка</button>
-        <button onClick={handleShowDeliveryHistory} style={{ ...styles.toggleButton, backgroundColor: showDeliveryHistory ? '#007bff' : '#e0e0e0' }}>Даставка тарихи</button>
+        <button
+          onClick={() => handleToggle(false)}
+          style={{
+            ...styles.toggleButton,
+            backgroundColor: !showHistory && !showOnlyDelivery && !showDeliveryHistory ? '#007bff' : '#e0e0e0'
+          }}
+        >
+          Хозирги
+        </button>
+        <button
+          onClick={() => handleToggle(true)}
+          style={{ ...styles.toggleButton, backgroundColor: showHistory ? '#007bff' : '#e0e0e0' }}
+        >
+          Тарих
+        </button>
+        <button
+          onClick={handleShowDeliveryOnly}
+          style={{ ...styles.toggleButton, backgroundColor: showOnlyDelivery ? '#007bff' : '#e0e0e0' }}
+        >
+          Даставка
+        </button>
+        <button
+          onClick={handleShowDeliveryHistory}
+          style={{ ...styles.toggleButton, backgroundColor: showDeliveryHistory ? '#007bff' : '#e0e0e0' }}
+        >
+          Даставка тарихи
+        </button>
       </div>
       <div style={styles.dateFilterContainer}>
         <label style={styles.dateLabel}>Сана:</label>
         <input
           type="date"
           value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value || new Date().toISOString().split('T')[0])}
+          onChange={(e) => setSelectedDate(e.target.value || new Date().toISOString().split('T')[0])}
           style={styles.dateInput}
         />
       </div>
-      {!showOnlyDelivery && !showDeliveryHistory && renderTable('🍽 Зал буюртмалари', filteredOrders(order => !isDelivery(order) && (showHistory ? ['archive', 'completed'].includes(order.status?.toLowerCase()) : ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase())) && dateMatch(order)))}
-      {showOnlyDelivery && renderTable('🚗 Доставка буюртмалари', filteredOrders(order => isDelivery(order) && ['pending', 'cooking'].includes(order.status?.toLowerCase()) && dateMatch(order)))}
-      {showDeliveryHistory && renderTable('📦 Даставка тарихи', filteredOrders(order => isDelivery(order) && ['ready', 'completed', 'archive'].includes(order.status?.toLowerCase()) && dateMatch(order)))}
+      {!showOnlyDelivery && !showDeliveryHistory &&
+        renderTable('🍽 Зал буюртмалари', filteredOrders(order =>
+          !isDelivery(order) &&
+          (showHistory
+            ? ['archive', 'completed'].includes(order.status?.toLowerCase())
+            : ['pending', 'cooking', 'ready'].includes(order.status?.toLowerCase())) &&
+          dateMatch(order)
+        ))}
+      {showOnlyDelivery &&
+        renderTable('🚗 Доставка буюртмалари', filteredOrders(order =>
+          isDelivery(order) &&
+          ['pending', 'cooking'].includes(order.status?.toLowerCase()) &&
+          dateMatch(order)
+        ))}
+      {showDeliveryHistory &&
+        renderTable('📦 Даставка тарихи', filteredOrders(order =>
+          isDelivery(order) &&
+          ['ready', 'completed', 'archive'].includes(order.status?.toLowerCase()) &&
+          dateMatch(order)
+        ))}
       {selectedDelivery && (
         <div style={styles.modalOverlay} onClick={() => setSelectedDelivery(null)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: '12px' }}>📦 Доставка маълумоти</h3>
-            <p><strong>Телефон рақами:</strong> {selectedDelivery.carrierNumber}</p>
+            <p><strong>Телефон рақами:</strong> {selectedDelivery.carrierNumber || '—'}</p>
             <p><strong>Маҳсулотлар:</strong></p>
             <ul>
-              {selectedDelivery.orderItems?.map((i, idx) => (
-                <li key={idx}>{i.product?.name || 'Номаълум'} ({i.count})</li>
-              ))}
+              {selectedDelivery.orderItems?.length > 0 ? (
+                selectedDelivery.orderItems.map((item, idx) => (
+                  <li key={idx}>{item.product?.name || 'Номаълум'} ({item.count || 0})</li>
+                ))
+              ) : (
+                <li>Маҳсулотлар йўқ</li>
+              )}
             </ul>
-            <p><strong>Жами нарх:</strong> {selectedDelivery.totalPrice.toLocaleString()} сўм</p>
-            <p><strong>Хизмат ҳақи:</strong> {Math.round(selectedDelivery.totalPrice * percent).toLocaleString()} сўм</p>
-            <p><strong>Умумий:</strong> {(selectedDelivery.totalPrice + Math.round(selectedDelivery.totalPrice * percent)).toLocaleString()} сўм</p>
+            <p><strong>Жами нарх:</strong> {(selectedDelivery.totalPrice || 0).toLocaleString()} сўм</p>
+            <p><strong>Хизмат ҳақи:</strong> {(selectedDelivery.usluga || 0).toLocaleString()} сўм</p>
+            <p><strong>Умумий:</strong> {((selectedDelivery.totalPrice || 0) + (selectedDelivery.usluga || 0)).toLocaleString()} сўм</p>
             <p><strong>Вақт:</strong> {formatDateTime(selectedDelivery.createdAt)}</p>
             <p><strong>Ҳолати:</strong> {getStatusBadge(selectedDelivery.status)}</p>
           </div>
@@ -266,7 +306,7 @@ const styles = {
   th: { backgroundColor: '#1976d2', color: '#fff', padding: '10px', textAlign: 'center', whiteSpace: 'nowrap' },
   td: { padding: '10px', textAlign: 'center', borderBottom: '1px solid #eee', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   deliveryBtn: { backgroundColor: '#f9c846', color: '#000', padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingaboriginal: '10px', zIndex: 1000 },
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', zIndex: 1000 },
   modal: { backgroundColor: '#fff', padding: '24px', borderRadius: '12px', maxWidth: '500px', width: '95%', maxHeight: '90vh', overflowY: 'auto' },
   productItem: { backgroundColor: '#f1f1f1', padding: '4px 6px', borderRadius: '4px', fontSize: '13px', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word' }
 };

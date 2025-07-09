@@ -1,17 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, memo } from 'react';
 import axios from 'axios';
 
-const GrandSummary = ({ total, fee, totalWithFee, monthName }) => {
-  return (
-    <div style={styles.totalBox}>
-      <h3 style={styles.totalTitle}>📦 {monthName} ойи буйича</h3>
-      <p style={styles.totalAmount}>Асосий сумма: {total.toLocaleString()} сўм</p>
-      <p style={styles.totalAmount}>Хизмат ҳақи: {Math.round(fee).toLocaleString()} сўм</p>
-      <p style={styles.totalAmount}>Жами: {Math.round(totalWithFee).toLocaleString()} сўм</p>
-    </div>
-  );
-};
-
 const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   <tr style={index % 2 === 0 ? styles.evenRow : styles.oddRow}>
     <td style={styles.td}>{day}</td>
@@ -22,7 +11,7 @@ const StatRow = memo(({ day, count, total, fee, totalWithFee, index }) => (
   </tr>
 ));
 
-const months = ['Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн', 'Июл', 'Август', 'Сентабр', 'Октябр', 'Ноябр', 'Декабр'];
+const months = ['Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн', 'Июл', 'Август', 'Сентябр', 'Октябр', 'Ноябр', 'Декабр'];
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const WeeklyMonthlyStats = () => {
@@ -30,29 +19,33 @@ const WeeklyMonthlyStats = () => {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [percent, setPercent] = useState(0.04); // default 4%
+  const [showOrders, setShowOrders] = useState(true);
   const ordersRef = useRef('');
   const year = new Date().getFullYear();
 
   useEffect(() => {
-    fetchOrders();
-    fetchPercent();
-    const interval = setInterval(fetchOrders, 10000);
+    fetchOrder();
+    const interval = setInterval(fetchOrder, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrder = async () => {
     try {
       const response = await axios.get('https://alikafecrm.uz/order');
       const updatedOrders = response.data.map(order => {
         let totalPrice = 0;
+        let totalFee = 0;
+
         if (Array.isArray(order.orderItems)) {
-          totalPrice = order.orderItems.reduce((acc, item) => {
+          order.orderItems.forEach(item => {
             const itemTotal = (item.product?.price || 0) * item.count;
-            return acc + itemTotal;
-          }, 0);
+            totalPrice += itemTotal;
+            const itemFee = order.carrierNumber ? 0 : Math.round(itemTotal * 0.1);
+            totalFee += itemFee;
+          });
         }
-        return { ...order, totalPrice };
+
+        return { ...order, totalPrice, usluga: totalFee };
       });
 
       const str = JSON.stringify(updatedOrders);
@@ -62,20 +55,9 @@ const WeeklyMonthlyStats = () => {
         setLastUpdated(new Date());
       }
     } catch (error) {
-      console.error('Буюртмаларни олишда хатолик:', error);
+      console.error('Xatolik:', error.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchPercent = async () => {
-    try {
-      const res = await axios.get('https://alikafecrm.uz/percent');
-      const val = Array.isArray(res.data) ? res.data[0]?.percent : res.data?.percent;
-      const parsed = parseFloat(val);
-      if (!isNaN(parsed)) setPercent(parsed / 100); // 5 => 0.05
-    } catch (error) {
-      console.error('Фоизни олишда хатолик:', error);
     }
   };
 
@@ -88,12 +70,16 @@ const WeeklyMonthlyStats = () => {
         stats[d] = { count: 0, total: 0, fee: 0, totalWithFee: 0 };
       }
 
-      orders.forEach(order => {
+      const filteredOrders = showOrders
+        ? orders.filter(order => !order.carrierNumber)
+        : orders.filter(order => order.carrierNumber);
+
+      filteredOrders.forEach(order => {
         const date = new Date(order.createdAt);
         if (date.getMonth() === m && date.getFullYear() === year) {
           const day = date.getDate();
           const base = order.totalPrice || 0;
-          const fee = base * percent;
+          const fee = order.usluga || 0;
           stats[day].count++;
           stats[day].total += base;
           stats[day].fee += fee;
@@ -106,7 +92,7 @@ const WeeklyMonthlyStats = () => {
     }
 
     return statsByMonth;
-  }, [orders, year, percent]);
+  }, [orders, year, showOrders]);
 
   const currentStats = monthStats[selectedMonth]?.stats || {};
   const daysCount = Object.keys(currentStats).length;
@@ -126,7 +112,30 @@ const WeeklyMonthlyStats = () => {
 
   return (
     <div style={styles.container}>
-      <GrandSummary total={grandTotal} fee={grandFee} totalWithFee={grandWithFee} monthName={months[selectedMonth]} />
+      {/* Zakazlar va Dastafka tugmalari */}
+      <div style={styles.buttonGroup}>
+        <button
+          onClick={() => setShowOrders(true)}
+          style={{
+            ...styles.toggleButton,
+            backgroundColor: showOrders ? '#007bff' : '#ccc',
+            color: showOrders ? 'white' : 'black'
+          }}
+        >
+          📋 Zakazlar
+        </button>
+
+        <button
+          onClick={() => setShowOrders(false)}
+          style={{
+            ...styles.toggleButton,
+            backgroundColor: !showOrders ? '#28a745' : '#ccc',
+            color: !showOrders ? 'white' : 'black'
+          }}
+        >
+          🚚 Dastafka
+        </button>
+      </div>
 
       <h2 style={styles.heading}>{months[selectedMonth]} ойи статистикаси</h2>
 
@@ -189,7 +198,6 @@ const WeeklyMonthlyStats = () => {
   );
 };
 
-// styles (o‘sha kodingizdagidek)
 const styles = {
   container: {
     padding: 24,
@@ -259,24 +267,34 @@ const styles = {
     backgroundColor: '#eaf2ff',
     fontWeight: 'bold',
   },
-  totalBox: {
-    backgroundColor: '#e3f2fd',
-    padding: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-    borderRadius: 10,
-    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+  buttonGroup: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '15px',
+    marginBottom: '20px',
+    padding: '10px',
+    width: '100%',
+    minHeight: '70px',
   },
-  totalTitle: {
-    fontSize: 20,
-    marginBottom: 6,
-    color: '#1565c0',
-  },
-  totalAmount: {
-    fontSize: 20,
+  toggleButton: {
+    padding: '12px 24px',
     fontWeight: 'bold',
-    color: '#0d47a1',
+    border: '2px solid #007bff',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    textAlign: 'center',
+    boxSizing: 'border-box',
+    minWidth: '150px',
+    fontSize: '16px',
+    transition: 'all 0.3s ease',
+    outline: 'none',
+    display: 'inline-block',
+    position: 'relative',
+    zIndex: 1,
+    height: '50px',
+    lineHeight: '24px',
   },
-}; // siz allaqachon kiritgan stylingdan foydalaning
+};
 
 export default WeeklyMonthlyStats;
